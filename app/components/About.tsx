@@ -1,17 +1,12 @@
-import Image from "next/image";
+"use client";
 
-const skills = [
-  "JavaScript",
-  "HTML/CSS",
-  "React",
-  "Next.js",
-  "Node.js",
-  "Python",
-  "Tailwind CSS",
-  "Git",
-];
+import Image from "next/image";
+import { usePortfolio } from "./PortfolioContext";
 
 export default function About() {
+  const { data } = usePortfolio();
+  const { about } = data;
+
   return (
     <section id="about" className="px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -25,17 +20,11 @@ export default function About() {
         <div className="grid gap-12 lg:grid-cols-2">
           {/* Bio */}
           <div className="flex flex-col justify-center space-y-6">
-            <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              I&apos;m a first-year college student pursuing a Bachelor of
-              Science in Information Technology at the University of Cebu. I have
-              a strong passion for web development and enjoy learning new
-              technologies to build modern, user-friendly applications.
-            </p>
-            <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-              Outside of coding, I enjoy exploring new tools, collaborating with
-              fellow developers, and continuously improving my skills to grow in
-              the tech industry.
-            </p>
+            {about.bio.map((paragraph, i) => (
+              <p key={i} className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+                {paragraph}
+              </p>
+            ))}
 
             {/* Skills */}
             <div>
@@ -43,7 +32,7 @@ export default function About() {
                 Tech Stack
               </h3>
               <div className="flex flex-wrap gap-2">
-                {skills.map((skill) => (
+                {about.skills.map((skill) => (
                   <span
                     key={skill}
                     className="rounded-full border border-gray-200 bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
@@ -60,8 +49,8 @@ export default function About() {
             <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
               <div className="flex items-center justify-center bg-white px-6 py-6">
                 <Image
-                  src="/uc-logo-bg-160x83.c24343b851e5b064daf9.png"
-                  alt="University of Cebu Logo"
+                  src={about.education.logo}
+                  alt={`${about.education.school} Logo`}
                   width={120}
                   height={63}
                   unoptimized
@@ -69,18 +58,16 @@ export default function About() {
               </div>
               <div className="px-6 py-5">
                 <h4 className="text-lg font-bold text-gray-900 dark:text-white">
-UNIVERSITY OF CEBU - BANILAD
+                  {about.education.school}
                 </h4>
                 <p className="mt-1 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  BACHELOR OF SCIENCE IN INFORMATION TECHNOLOGY
+                  {about.education.degree}
                 </p>
                 <div className="mt-3 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                  First Year Student
+                  {about.education.status}
                 </div>
                 <p className="mt-4 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                  Currently learning the fundamentals of IT, programming, and
-                  web development. Eager to apply classroom knowledge to
-                  real-world projects.
+                  {about.education.description}
                 </p>
               </div>
             </div>
