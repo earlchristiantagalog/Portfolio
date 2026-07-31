@@ -1,5 +1,5 @@
-import { SignIn } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import SignInForm from "./SignInForm";
 
 export const metadata: Metadata = {
   title: "Sign In | Admin",
@@ -32,29 +32,8 @@ export default function SignInPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-card-border bg-card p-6 shadow-xl shadow-black/5">
-          <SignIn
-            appearance={{
-              elements: {
-                rootBox: "mx-auto w-full",
-                card: "w-full rounded-xl border-0 bg-transparent shadow-none",
-                header: "hidden",
-                dividerRow: "hidden",
-                formFieldLabel: "text-sm font-medium text-foreground",
-                formFieldInput:
-                  "w-full rounded-xl border border-card-border bg-background px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
-                formButtonPrimary:
-                  "group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:bg-primary-dark disabled:opacity-50",
-                footerActionLink: "text-sm font-medium text-primary hover:text-primary-light",
-                footerActionText: "text-sm text-muted-foreground",
-                alternativeMethodsBlockButton:
-                  "rounded-xl border border-card-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted",
-                identityPreview: "rounded-xl border border-card-border bg-background",
-                alert: "rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-600 dark:text-red-400",
-              },
-            }}
-            fallbackRedirectUrl="/admin"
-          />
+        <div className="rounded-2xl border border-card-border bg-card p-6 shadow-xl shadow-black/5 sm:p-8">
+          <SignInForm />
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
