@@ -52,7 +52,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-muted">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-card-border bg-background/80 shadow-sm shadow-black/5 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-lg font-bold text-foreground">
               Portfolio<span className="text-primary">.</span>
@@ -61,33 +61,33 @@ export default function AdminPage() {
               Admin
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {isLoaded && user && (
               <span className="hidden max-w-40 truncate text-sm text-muted-foreground md:inline">
                 {user.fullName ?? user.primaryEmailAddress?.emailAddress}
               </span>
             )}
             <SignOutButton>
-              <button className="rounded-xl border border-card-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm">
+              <button className="rounded-xl border border-card-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm sm:px-4">
                 Sign Out
               </button>
             </SignOutButton>
             <Link
               href="/"
-              className="rounded-xl border border-card-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm"
+              className="hidden rounded-xl border border-card-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm sm:inline-block sm:px-4"
             >
               View Portfolio
             </Link>
             <button
               onClick={handleSetup}
               disabled={setupStatus === "loading"}
-              className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
             >
               {setupStatus === "loading" ? "Setting up..." : setupStatus === "done" ? "Ready!" : setupStatus === "error" ? "Failed" : "Setup DB"}
             </button>
             <button
               onClick={handleReset}
-              className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-600 transition-all hover:-translate-y-0.5 hover:bg-red-500/20 dark:text-red-400"
+              className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-600 transition-all hover:-translate-y-0.5 hover:bg-red-500/20 dark:text-red-400 sm:px-4"
             >
               Reset Defaults
             </button>
@@ -464,27 +464,27 @@ function ProjectsEditor({
       </SectionCard>
 
       <SectionCard title={`Projects (${local.items.length})`}>
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <p className="text-sm text-muted-foreground">Manage your school and personal projects</p>
-          <button onClick={addProject} className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-primary-dark">+ Add Project</button>
+          <button onClick={addProject} className="w-full shrink-0 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-primary-dark sm:w-auto">+ Add Project</button>
         </div>
 
         <div className="space-y-3">
           {local.items.map((project) => (
             <div key={project.id} className="overflow-hidden rounded-xl border border-card-border">
               <div
-                className="flex cursor-pointer items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50"
+                className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
                 onClick={() => setEditingProject(editingProject === project.id ? null : project.id)}
               >
-                <div className="flex items-center gap-3">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     project.category === "School Projects"
                       ? "bg-primary/10 text-primary"
                       : "bg-accent/10 text-accent"
                   }`}>
                     {project.category === "School Projects" ? "School" : "Personal"}
                   </span>
-                  <span className="font-medium text-foreground">{project.title}</span>
+                  <span className="truncate font-medium text-foreground">{project.title}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={(e) => { e.stopPropagation(); removeProject(project.id); }} className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500">

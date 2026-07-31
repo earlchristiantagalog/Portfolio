@@ -37,12 +37,12 @@ export default function Projects() {
 
         {/* Tabs */}
         <div className="mb-10 flex justify-center">
-          <div className="inline-flex rounded-xl border border-card-border bg-card p-1 shadow-sm">
+          <div className="inline-flex w-full max-w-full justify-start overflow-x-auto rounded-xl border border-card-border bg-card p-1 shadow-sm sm:w-auto sm:justify-center">
             {projects.categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveTab(cat)}
-                className={`rounded-lg px-5 py-2 text-sm font-medium transition-all ${
+                className={`whitespace-nowrap rounded-lg px-5 py-2 text-sm font-medium transition-all ${
                   activeTab === cat
                     ? "bg-primary text-white shadow-md"
                     : "text-muted-foreground hover:text-foreground"

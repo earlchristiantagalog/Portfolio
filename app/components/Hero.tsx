@@ -69,11 +69,11 @@ export default function Hero() {
             </div>
 
             {/* Social links */}
-            <div className="mt-10 flex animate-fade-up items-center gap-4 lg:items-start" style={{ animationDelay: "0.4s" }}>
+            <div className="mt-10 flex animate-fade-up flex-col items-center gap-4 sm:flex-row lg:items-start" style={{ animationDelay: "0.4s" }}>
               <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
                 Find me on
               </span>
-              <div className="h-px flex-1 bg-card-border" />
+              <div className="hidden h-px w-full max-w-24 bg-card-border sm:block sm:flex-1" />
               <div className="flex gap-2">
                 <a href={social.github} target="_blank" rel="noopener noreferrer" className="flex h-9 w-9 items-center justify-center rounded-lg border border-card-border bg-card text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:text-primary hover:shadow-md" aria-label="GitHub">
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

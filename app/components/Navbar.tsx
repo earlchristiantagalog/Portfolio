@@ -90,7 +90,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <div
         className={`overflow-hidden transition-all duration-300 md:hidden ${
-          isOpen ? "max-h-80 border-b border-card-border" : "max-h-0"
+          isOpen ? "max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-card-border" : "max-h-0"
         }`}
       >
         <div className="flex flex-col gap-1 bg-background/95 px-4 pb-4 pt-2 backdrop-blur-xl">
