@@ -1,27 +1,13 @@
 "use client";
 
-import { getAppwriteClient } from "./appwrite";
-import { defaultData, type PortfolioData } from "@/app/data/portfolio-data";
-
-const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID;
-const COLLECTION_ID = process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_ID;
-const DOCUMENT_ID = "portfolio-data";
+import type { PortfolioData } from "@/app/data/portfolio-data";
 
 export async function loadPortfolioData(): Promise<PortfolioData | null> {
-  const appwrite = getAppwriteClient();
-  if (!appwrite || !DATABASE_ID || !COLLECTION_ID) return null;
-
   try {
-    const doc = await appwrite.databases.getDocument(
-      DATABASE_ID,
-      COLLECTION_ID,
-      DOCUMENT_ID
-    );
-    const raw = (doc as any).data;
-    if (typeof raw === "string") {
-      return JSON.parse(raw) as PortfolioData;
-    }
-    return raw as PortfolioData;
+    const res = await fetch("/api/data", { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json.data as PortfolioData) ?? null;
   } catch {
     return null;
   }
@@ -30,31 +16,14 @@ export async function loadPortfolioData(): Promise<PortfolioData | null> {
 export async function savePortfolioData(
   data: PortfolioData
 ): Promise<boolean> {
-  const appwrite = getAppwriteClient();
-  if (!appwrite || !DATABASE_ID || !COLLECTION_ID) return false;
-
-  const payload = { data: JSON.stringify(data) };
-
   try {
-    await appwrite.databases.updateDocument(
-      DATABASE_ID,
-      COLLECTION_ID,
-      DOCUMENT_ID,
-      payload as any
-    );
-    return true;
+    const res = await fetch("/api/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return res.ok;
   } catch {
-    // Document doesn't exist — create it
-    try {
-      await appwrite.databases.createDocument(
-        DATABASE_ID,
-        COLLECTION_ID,
-        DOCUMENT_ID,
-        payload as any
-      );
-      return true;
-    } catch {
-      return false;
-    }
+    return false;
   }
 }

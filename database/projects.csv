@@ -1,0 +1,7 @@
+title,description,image,category,github,live,position
+Student Enrollment System,A web-based enrollment system for managing student registration and records.,/file.svg,School Projects,https://github.com,https://vercel.com,1
+Library Management App,System for tracking books, borrowing, and returns with a simple dashboard.,/globe.svg,School Projects,https://github.com,https://vercel.com,2
+Class Attendance Tracker,Attendance monitoring tool with CSV export and summary reports.,/window.svg,School Projects,https://github.com,https://vercel.com,3
+E-Commerce Platform,A full-stack e-commerce solution with cart, checkout, and payment integration.,/file.svg,Personal Projects,https://github.com,https://vercel.com,4
+Weather Dashboard,Beautiful weather app with 7-day forecasts, interactive maps, and alerts.,/window.svg,Personal Projects,https://github.com,https://vercel.com,5
+Portfolio CMS,Headless CMS for managing portfolio content with an intuitive admin panel.,/next.svg,Personal Projects,https://github.com,https://vercel.com,6

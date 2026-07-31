@@ -48,9 +48,10 @@ To persist data across sessions, configure Appwrite:
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://nyc.cloud.appwrite.io/v1
 NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_APPWRITE_DATABASE_ID=portfolio_db
-NEXT_PUBLIC_APPWRITE_COLLECTION_ID=portfolio_data
 APPWRITE_API_KEY=your_api_key
 ```
+
+The data is stored across normalized collections (`hero`, `about_bio`, `skills`, `education`, `projects`, `project_tags`, `projects_config`, `contact`, `social`, `meta`). The `database/` folder contains CSV seeds that match the collection columns.
 
 If Appwrite is unavailable, the app seamlessly falls back to localStorage.
 
@@ -64,14 +65,25 @@ npm run build
 
 ```
 app/
-├── (main)/            # Route group for main pages
-├── admin/             # Admin panel
+├── admin/             # Admin panel (Clerk-protected)
+├── api/data/          # Portfolio data API (GET/POST)
 ├── api/setup/         # Appwrite DB setup endpoint
 ├── components/        # React components
 ├── data/              # Type definitions & default data
-├── lib/               # Appwrite client & service
+├── lib/               # Appwrite admin & data layer
+├── sign-in/           # Custom sign-in page
 ├── globals.css        # Tailwind theme & animations
 ├── layout.tsx         # Root layout
 └── page.tsx           # Home page
 ```
 
+## Authentication
+
+The `/admin` route is protected with [Clerk](https://clerk.com). Unauthenticated visitors are redirected to the custom sign-in page at `/sign-in`.
+
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/admin
+```

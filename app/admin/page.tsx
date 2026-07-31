@@ -2,10 +2,11 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useUser, SignOutButton } from "@clerk/nextjs";
 import { usePortfolio } from "@/app/components/PortfolioContext";
-import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData } from "@/app/data/portfolio-data";
+import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData, MetaData } from "@/app/data/portfolio-data";
 
-type Tab = "hero" | "about" | "projects" | "contact" | "social";
+type Tab = "hero" | "about" | "projects" | "contact" | "social" | "meta";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "hero", label: "Hero" },
@@ -13,10 +14,12 @@ const tabs: { key: Tab; label: string }[] = [
   { key: "projects", label: "Projects" },
   { key: "contact", label: "Contact" },
   { key: "social", label: "Social" },
+  { key: "meta", label: "Meta Tags" },
 ];
 
 export default function AdminPage() {
   const { data, loading, updateSection, resetData } = usePortfolio();
+  const { user, isLoaded } = useUser();
   const [activeTab, setActiveTab] = useState<Tab>("hero");
   const [saved, setSaved] = useState(false);
   const [setupStatus, setSetupStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -59,6 +62,16 @@ export default function AdminPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            {isLoaded && user && (
+              <span className="hidden max-w-40 truncate text-sm text-muted-foreground md:inline">
+                {user.fullName ?? user.primaryEmailAddress?.emailAddress}
+              </span>
+            )}
+            <SignOutButton>
+              <button className="rounded-xl border border-card-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm">
+                Sign Out
+              </button>
+            </SignOutButton>
             <Link
               href="/"
               className="rounded-xl border border-card-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm"
@@ -143,6 +156,9 @@ export default function AdminPage() {
         )}
         {activeTab === "social" && (
           <SocialEditor data={data} update={updateSection} onSave={handleSave} />
+        )}
+        {activeTab === "meta" && (
+          <MetaEditor data={data} update={updateSection} onSave={handleSave} />
         )}
           </>
         )}
@@ -618,6 +634,43 @@ function SocialEditor({
           <Input value={local.email} onChange={(v) => setLocal({ ...local, email: v })} />
         </Field>
       </div>
+      <div className="mt-6">
+        <SaveButton onClick={save} />
+      </div>
+    </SectionCard>
+  );
+}
+
+/* ───── Meta Tag Editor ───── */
+function MetaEditor({
+  data,
+  update,
+  onSave,
+}: {
+  data: PortfolioData;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  onSave: () => void;
+}) {
+  const [local, setLocal] = useState<MetaData>({ ...data.meta });
+
+  const save = () => {
+    update("meta", local);
+    onSave();
+  };
+
+  return (
+    <SectionCard title="Meta Tag Settings">
+      <div className="space-y-4">
+        <Field label="Site Title">
+          <Input value={local.title} onChange={(v) => setLocal({ ...local, title: v })} />
+        </Field>
+        <Field label="Meta Description">
+          <TextArea rows={4} value={local.description} onChange={(v) => setLocal({ ...local, description: v })} />
+        </Field>
+      </div>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Used for the browser tab and search engine previews of the site.
+      </p>
       <div className="mt-6">
         <SaveButton onClick={save} />
       </div>
