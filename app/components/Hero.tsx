@@ -8,7 +8,7 @@ export default function Hero() {
   const { hero, social } = data;
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 pt-20 sm:px-6 lg:px-8">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 pb-24 pt-20 sm:px-6 sm:pb-20 lg:px-8">
       {/* Animated gradient orbs */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/4 top-1/4 h-[600px] w-[600px] animate-float rounded-full bg-gradient-to-br from-primary/15 to-primary/5 blur-3xl" />

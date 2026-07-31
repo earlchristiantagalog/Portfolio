@@ -81,7 +81,7 @@ export default function About() {
                 {/* Content */}
                 <div className="p-6">
                   <div className="mb-4 flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0">
                       <h4 className="text-lg font-bold text-foreground">
                         {about.education.school}
                       </h4>

@@ -100,8 +100,8 @@ export default function Projects() {
 
               {/* Content */}
               <div className="p-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-foreground">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="min-w-0 truncate text-lg font-bold text-foreground">
                     {project.title}
                   </h3>
                   <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
