@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useUser, SignOutButton } from "@clerk/nextjs";
 import { usePortfolio } from "@/app/components/PortfolioContext";
@@ -266,6 +266,10 @@ function HeroEditor({
 }) {
   const [local, setLocal] = useState<HeroData>({ ...data.hero });
 
+  useEffect(() => {
+    setLocal({ ...data.hero });
+  }, [data.hero]);
+
   const save = () => {
     update("hero", local);
     onSave();
@@ -310,6 +314,14 @@ function AboutEditor({
     education: { ...data.about.education },
   });
   const [newSkill, setNewSkill] = useState("");
+
+  useEffect(() => {
+    setLocal({
+      bio: [...data.about.bio],
+      skills: [...data.about.skills],
+      education: { ...data.about.education },
+    });
+  }, [data.about]);
 
   const save = () => {
     update("about", local);
@@ -418,6 +430,15 @@ function ProjectsEditor({
   });
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
+
+  useEffect(() => {
+    setLocal({
+      heading: data.projects.heading,
+      subtitle: data.projects.subtitle,
+      categories: [...data.projects.categories],
+      items: data.projects.items.map((p) => ({ ...p, tags: [...p.tags] })),
+    });
+  }, [data.projects]);
 
   const save = () => {
     update("projects", local);
@@ -598,6 +619,10 @@ function ContactEditor({
 }) {
   const [local, setLocal] = useState<ContactData>({ ...data.contact });
 
+  useEffect(() => {
+    setLocal({ ...data.contact });
+  }, [data.contact]);
+
   const save = () => {
     update("contact", local);
     onSave();
@@ -631,6 +656,10 @@ function SocialEditor({
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<SocialData>({ ...data.social });
+
+  useEffect(() => {
+    setLocal({ ...data.social });
+  }, [data.social]);
 
   const save = () => {
     update("social", local);
@@ -668,6 +697,10 @@ function MetaEditor({
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<MetaData>({ ...data.meta });
+
+  useEffect(() => {
+    setLocal({ ...data.meta });
+  }, [data.meta]);
 
   const save = () => {
     update("meta", local);

@@ -19,14 +19,14 @@ export async function loadPortfolioData(): Promise<PortfolioData | null> {
 }
 
 export async function savePortfolioData(
-  data: PortfolioData
+  data: PortfolioData,
+  sessionToken: string | null
 ): Promise<boolean> {
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (sessionToken) headers["Authorization"] = `Bearer ${sessionToken}`;
 
     const res = await fetch(`${API_BASE}/api/admin/portfolio`, {
       method: "PUT",
@@ -55,23 +55,5 @@ export async function submitContactForm(data: {
     return res.ok;
   } catch {
     return false;
-  }
-}
-
-export async function adminLogin(
-  username: string,
-  password: string
-): Promise<{ token: string; username: string } | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data;
-  } catch {
-    return null;
   }
 }
