@@ -42,13 +42,13 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<PortfolioData>(defaultData);
   const [loading, setLoading] = useState(true);
 
-  // Initial load: Appwrite -> localStorage -> defaults
+  // Initial load: Express API -> localStorage -> defaults
   useEffect(() => {
     async function init() {
-      const appwriteData = await loadPortfolioData();
-      if (appwriteData) {
-        setData(appwriteData);
-        setLocalData(appwriteData);
+      const apiData = await loadPortfolioData();
+      if (apiData) {
+        setData(apiData);
+        setLocalData(apiData);
       } else {
         setData(getLocalSnapshot());
       }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePortfolio } from "./PortfolioContext";
+import { submitContactForm } from "@/app/lib/portfolio-service";
 
 export default function Contact() {
   const { data } = usePortfolio();
@@ -10,6 +11,7 @@ export default function Contact() {
   const [formState, setFormState] = useState({ name: "", email: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -24,12 +26,23 @@ export default function Contact() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    setSubmitted(true);
-    setFormState({ name: "", email: "", message: "" });
-    setTimeout(() => setSubmitted(false), 4000);
+    setSubmitting(true);
+
+    const success = await submitContactForm({
+      name: formState.name,
+      email: formState.email,
+      message: formState.message,
+    });
+
+    setSubmitting(false);
+    if (success) {
+      setSubmitted(true);
+      setFormState({ name: "", email: "", message: "" });
+      setTimeout(() => setSubmitted(false), 4000);
+    }
   };
 
   return (
@@ -116,13 +129,16 @@ export default function Contact() {
               </div>
               <button
                 type="submit"
-                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30"
+                disabled={submitting}
+                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary opacity-0 transition-opacity group-hover:opacity-100" />
-                <span className="relative">Send Message</span>
-                <svg className="relative h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <span className="relative">{submitting ? "Sending..." : "Send Message"}</span>
+                {!submitting && (
+                  <svg className="relative h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
               </button>
             </form>
 
