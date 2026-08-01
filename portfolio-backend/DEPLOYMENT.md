@@ -14,21 +14,36 @@ cp .env.example .env
 # Edit .env and paste your DATABASE_URL
 ```
 
-### 3. Initialize Database
-```bash
-npm run db:setup
-npm run db:seed
+Your `.env` is the single source of truth for all backend config:
+```env
+PORT=5000
+NODE_ENV=development
+DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
+JWT_SECRET=your-secret-here
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=https://earlchristian.me,https://www.earlchristian.me,http://localhost:3000
 ```
 
-### 4. Start Development Server
+### 3. Initialize Database
+```bash
+# Creates tables + seeds default data (safe to re-run)
+node scripts/setup-db.js
+```
+
+### 4. Create Admin User
+```bash
+node scripts/create-admin.js admin your-password
+```
+
+### 5. Start Development Server
 ```bash
 npm run dev
 # Server runs on http://localhost:5000
 ```
 
-### 5. Configure Frontend
+### 6. Configure Frontend (.env.local in Next.js root)
 ```bash
-# In the root portfolio directory
+# In the portfolio/ root directory
 echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local
 npm run dev
 ```
@@ -37,22 +52,11 @@ npm run dev
 
 ## Production Deployment (Render/Railway/Fly.io)
 
-### Step 1: Push Backend to GitHub
-
-Create a new repository or subdirectory:
-```
-portfolio-backend/
-├── .gitignore (includes .env)
-├── package.json
-├── server.js
-└── ...
-```
-
-### Step 2: Deploy to Render
+### Step 1: Deploy Backend
 
 1. Go to https://dashboard.render.com
 2. Click **New +** → **Web Service**
-3. Connect your GitHub repository
+3. Connect your GitHub repository (the `portfolio-backend/` directory)
 4. Configure:
    - **Name:** `portfolio-backend`
    - **Runtime:** Node
@@ -60,59 +64,53 @@ portfolio-backend/
    - **Start Command:** `npm start`
    - **Port:** 5000
 
-5. Add Environment Variables:
+5. Add these Environment Variables (copy from your `.env`):
    ```
-   DATABASE_URL=postgresql://...neon.tech:5432/portfolio_db?sslmode=require
-   JWT_SECRET=your-super-secret-key-here
+   DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=require
+   JWT_SECRET=your-strong-random-secret
    JWT_EXPIRES_IN=7d
-   CORS_ORIGIN=https://earlchristian.me,https://www.earlchristian.me,http://localhost:3000
+   CORS_ORIGIN=https://earlchristian.me,https://www.earlchristian.me
    NODE_ENV=production
    ```
 
 6. Click **Create Web Service**
 
-### Step 3: Initialize Production Database
+### Step 2: Initialize Production Database
 
-After deployment, SSH into the service or run locally:
+Click **Manual Deploy** → **Deploy latest commit** after adding env vars.
+Then open the Render shell (or run locally with production DATABASE_URL):
 ```bash
-# Set DATABASE_URL to your production Neon URL
-npm run db:setup
-npm run db:seed
+node scripts/setup-db.js
 node scripts/create-admin.js admin your-password
 ```
 
-### Step 4: Update Frontend Environment
+### Step 3: Set Frontend Env Var
 
-In your Next.js project root:
-```bash
-# .env.local
-NEXT_PUBLIC_API_URL=https://portfolio-backend.onrender.com
+In Vercel dashboard → your project → Settings → Environment Variables:
+```
+NEXT_PUBLIC_API_URL = https://portfolio-backend.onrender.com
 ```
 
-### Step 5: Update CORS on Backend
-
-In Render dashboard, ensure:
-```
-CORS_ORIGIN=https://earlchristian.me,https://www.earlchristian.me,https://your-vercel-app.vercel.app
-```
+Redeploy the frontend after adding this.
 
 ---
 
-## API Endpoints Reference
+## API Endpoints
 
 ### Public (No Auth)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/portfolio` | Fetch all portfolio data |
 | POST | `/api/messages` | Submit contact form |
+| POST | `/api/setup` | Initialize database tables + seed |
 | GET | `/health` | Health check |
 
-### Admin (Requires JWT)
+### Admin (Requires JWT Bearer token)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/login` | Admin login |
-| GET | `/api/auth/verify` | Verify token |
-| PUT | `/api/admin/portfolio` | Update full portfolio |
+| POST | `/api/auth/login` | Admin login (returns JWT) |
+| GET | `/api/auth/verify` | Verify token is valid |
+| PUT | `/api/admin/portfolio` | Update full portfolio at once |
 | PUT | `/api/admin/hero` | Update hero section |
 | PUT | `/api/admin/education` | Update education |
 | PUT | `/api/admin/about-bio` | Update bio paragraphs |
@@ -127,106 +125,42 @@ CORS_ORIGIN=https://earlchristian.me,https://www.earlchristian.me,https://your-v
 | PUT | `/api/admin/contact` | Update contact section |
 | PUT | `/api/admin/social` | Update social links |
 | PUT | `/api/admin/meta` | Update SEO meta |
-| GET | `/api/admin/messages` | List contact messages |
+| GET | `/api/admin/messages` | List contact submissions |
 | PATCH | `/api/admin/messages/:id/read` | Mark message read |
 | DELETE | `/api/admin/messages/:id` | Delete message |
 
 ---
 
-## Cross-Device Loading Fix
-
-The main issue causing data not to load on other devices was:
-
-1. **Relative API URLs** - The frontend was fetching from `/api/data` which resolves to `localhost` on other devices
-2. **Missing CORS headers** - No explicit `Access-Control-Allow-Origin` for external domains
-3. **No credentials support** - `Access-Control-Allow-Credentials` was not set
-
-### How It's Fixed
-
-**Frontend** (`portfolio-service.ts`):
-```typescript
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-// Uses absolute URL: https://your-backend.onrender.com/api/portfolio
-```
-
-**Backend** (`middleware/cors.js`):
-```javascript
-const corsOptions = {
-  origin: ['https://earlchristian.me', 'https://www.earlchristian.me'],
-  credentials: true,  // Allows cookies/auth headers
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-};
-```
-
-### Verify Fix
-1. Open https://earlchristian.me on your phone
-2. Open browser DevTools → Network tab
-3. Check that `/api/portfolio` returns 200 (not failed)
-4. Verify no CORS errors in Console tab
-
----
-
 ## Troubleshooting
 
+### "Setup DB" button shows error
+- Check `NEXT_PUBLIC_API_URL` is set in Vercel (must be the full backend URL)
+- Check backend logs in Render dashboard for the actual SQL error
+- Open browser DevTools → Network → click the failed request → Response tab
+
 ### "CORS error" in browser console
-- Ensure `CORS_ORIGIN` includes your exact domain
-- Check for trailing slashes or protocol mismatches
-- Verify the backend is running
+- Ensure `CORS_ORIGIN` in backend `.env` includes `https://earlchristian.me`
+- Redeploy backend after changing env vars
 
 ### "Database connection failed"
-- Check `DATABASE_URL` is correct
-- Ensure Neon project is not paused (free tier pauses after inactivity)
-- Verify SSL mode is `require`
+- Check `DATABASE_URL` is correct in `.env`
+- Neon free tier pauses after inactivity — visit neon dashboard to wake it
+- Ensure `?sslmode=require` is at the end of the URL
 
-### "Cannot find module" errors
-- Run `npm install` in the backend directory
-- Ensure Node.js version is 18+
-
-### Port already in use
-- Change `PORT` in `.env` to a different number
-- Or stop the process using the port: `lsof -i :5000`
+### "NEXT_PUBLIC_API_URL is not set" alert
+- Add `NEXT_PUBLIC_API_URL=https://your-backend.onrender.com` in Vercel env vars
+- Redeploy the frontend
 
 ---
 
-## Database Management
+## Environment Variables
 
-### Run migrations
-```bash
-npm run db:setup
-```
-
-### Seed default data
-```bash
-npm run db:seed
-```
-
-### Create admin user
-```bash
-node scripts/create-admin.js username password
-```
-
-### Connect to database directly
-```bash
-# Using psql
-psql $DATABASE_URL
-
-# List tables
-\dt
-
-# Check data
-SELECT * FROM hero;
-SELECT COUNT(*) FROM projects;
-```
-
----
-
-## Environment Variables Reference
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | 5000 | Server port |
-| `NODE_ENV` | No | development | Environment mode |
-| `DATABASE_URL` | Yes | - | Neon DB connection string |
-| `JWT_SECRET` | Yes | - | Secret for JWT tokens |
-| `JWT_EXPIRES_IN` | No | 7d | Token expiry duration |
-| `CORS_ORIGIN` | No | earlchristian.me origins | Comma-separated allowed origins |
+| Variable | Where | Required | Description |
+|----------|-------|----------|-------------|
+| `PORT` | Backend `.env` | No (default 5000) | Server port |
+| `NODE_ENV` | Backend `.env` | No (default development) | production/development |
+| `DATABASE_URL` | Backend `.env` | Yes | Neon DB connection string |
+| `JWT_SECRET` | Backend `.env` | Yes | Secret for signing JWT tokens |
+| `JWT_EXPIRES_IN` | Backend `.env` | No (default 7d) | Token expiry duration |
+| `CORS_ORIGIN` | Backend `.env` | No | Comma-separated allowed origins |
+| `NEXT_PUBLIC_API_URL` | Frontend `.env.local` | Yes | Backend URL (e.g. http://localhost:5000) |

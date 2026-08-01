@@ -27,14 +27,25 @@ export default function AdminPage() {
   const [setupStatus, setSetupStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   const handleSetup = useCallback(async () => {
+    if (!API_BASE) {
+      setSetupStatus("error");
+      alert("NEXT_PUBLIC_API_URL is not set. Please configure it in your deployment environment.");
+      setTimeout(() => setSetupStatus("idle"), 3000);
+      return;
+    }
     setSetupStatus("loading");
     try {
       const res = await fetch(`${API_BASE}/api/setup`, { method: "POST" });
       const json = await res.json();
       setSetupStatus(json.success ? "done" : "error");
+      if (!json.success && json.error) {
+        alert(`Setup failed: ${json.error}`);
+      }
       setTimeout(() => setSetupStatus("idle"), 3000);
-    } catch {
+    } catch (err: any) {
+      console.error("Setup error:", err);
       setSetupStatus("error");
+      alert(`Setup failed: ${err?.message || "Network error"}`);
       setTimeout(() => setSetupStatus("idle"), 3000);
     }
   }, []);
