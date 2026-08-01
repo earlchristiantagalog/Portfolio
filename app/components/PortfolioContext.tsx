@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { defaultData, type PortfolioData } from "@/app/data/portfolio-data";
 import { loadPortfolioData, savePortfolioData } from "@/app/lib/portfolio-service";
 
@@ -41,6 +42,7 @@ function setLocalData(data: PortfolioData) {
 export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<PortfolioData>(defaultData);
   const [loading, setLoading] = useState(true);
+  const { getToken } = useAuth();
 
   // Initial load: Express API -> localStorage -> defaults
   useEffect(() => {
@@ -69,23 +71,26 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateSection = useCallback(
-    <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => {
+    async <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => {
       setData((prev) => {
         const next = { ...prev, [key]: value };
         setLocalData(next);
-        savePortfolioData(next);
         return next;
       });
+      const token = await getToken();
+      const snapshot = { ...data, [key]: value };
+      savePortfolioData(snapshot, token);
     },
-    []
+    [getToken, data]
   );
 
-  const resetData = useCallback(() => {
+  const resetData = useCallback(async () => {
     localStorage.removeItem(STORAGE_KEY);
     setData(defaultData);
-    savePortfolioData(defaultData);
+    const token = await getToken();
+    savePortfolioData(defaultData, token);
     window.dispatchEvent(new CustomEvent(PORTFOLIO_EVENT));
-  }, []);
+  }, [getToken]);
 
   return (
     <PortfolioContext.Provider value={{ data, loading, updateSection, resetData }}>
