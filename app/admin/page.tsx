@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useUser, SignOutButton } from "@clerk/nextjs";
 import { usePortfolio } from "@/app/components/PortfolioContext";
+import { AdminAuthProvider } from "./AdminAuthProvider";
 import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData, MetaData } from "@/app/data/portfolio-data";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
@@ -108,74 +109,76 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Loading state */}
-        {loading && (
-          <div className="mb-8 flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-4 text-muted-foreground">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-sm">Loading portfolio data...</p>
+      <AdminAuthProvider>
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Loading state */}
+          {loading && (
+            <div className="mb-8 flex items-center justify-center py-20">
+              <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="text-sm">Loading portfolio data...</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!loading && (
-          <>
-        {/* Tabs */}
-        <div className="mb-8 flex gap-1 overflow-x-auto rounded-xl border border-card-border bg-card p-1 shadow-sm">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                activeTab === tab.key
-                  ? "bg-primary text-white shadow-md"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {!loading && (
+            <>
+              {/* Tabs */}
+              <div className="mb-8 flex gap-1 overflow-x-auto rounded-xl border border-card-border bg-card p-1 shadow-sm">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                      activeTab === tab.key
+                        ? "bg-primary text-white shadow-md"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Saved indicator */}
+              {saved && (
+                <div className="mb-6 animate-fade-up rounded-xl border border-green-500/20 bg-green-500/10 px-5 py-3 text-sm text-green-700 dark:text-green-400">
+                  <div className="flex items-center gap-2">
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Changes saved! View them on the{" "}
+                    <Link href="/" className="underline underline-offset-2 hover:text-green-800 dark:hover:text-green-300">
+                      portfolio page
+                    </Link>
+                    .
+                  </div>
+                </div>
+              )}
+
+              {/* Tab Content */}
+              {activeTab === "hero" && (
+                <HeroEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+              {activeTab === "about" && (
+                <AboutEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+              {activeTab === "projects" && (
+                <ProjectsEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+              {activeTab === "contact" && (
+                <ContactEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+              {activeTab === "social" && (
+                <SocialEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+              {activeTab === "meta" && (
+                <MetaEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+            </>
+          )}
         </div>
-
-        {/* Saved indicator */}
-        {saved && (
-          <div className="mb-6 animate-fade-up rounded-xl border border-green-500/20 bg-green-500/10 px-5 py-3 text-sm text-green-700 dark:text-green-400">
-            <div className="flex items-center gap-2">
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Changes saved! View them on the{" "}
-              <Link href="/" className="underline underline-offset-2 hover:text-green-800 dark:hover:text-green-300">
-                portfolio page
-              </Link>
-              .
-            </div>
-          </div>
-        )}
-
-        {/* Tab Content */}
-        {activeTab === "hero" && (
-          <HeroEditor data={data} update={updateSection} onSave={handleSave} />
-        )}
-        {activeTab === "about" && (
-          <AboutEditor data={data} update={updateSection} onSave={handleSave} />
-        )}
-        {activeTab === "projects" && (
-          <ProjectsEditor data={data} update={updateSection} onSave={handleSave} />
-        )}
-        {activeTab === "contact" && (
-          <ContactEditor data={data} update={updateSection} onSave={handleSave} />
-        )}
-        {activeTab === "social" && (
-          <SocialEditor data={data} update={updateSection} onSave={handleSave} />
-        )}
-        {activeTab === "meta" && (
-          <MetaEditor data={data} update={updateSection} onSave={handleSave} />
-        )}
-          </>
-        )}
-      </div>
+      </AdminAuthProvider>
     </div>
   );
 }
