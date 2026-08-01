@@ -3,10 +3,12 @@ const router = express.Router();
 const portfolioRoutes = require('./portfolio');
 const adminRoutes = require('./admin');
 const authRoutes = require('./auth');
+const setupRoutes = require('./setup');
 const auth = require('../middleware/auth');
 
 router.use('/', portfolioRoutes);
 router.use('/auth', authRoutes);
+router.use('/setup', setupRoutes);
 router.use('/admin', auth, adminRoutes);
 
 module.exports = router;

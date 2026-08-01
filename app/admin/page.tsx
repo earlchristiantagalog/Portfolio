@@ -6,6 +6,8 @@ import { useUser, SignOutButton } from "@clerk/nextjs";
 import { usePortfolio } from "@/app/components/PortfolioContext";
 import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData, MetaData } from "@/app/data/portfolio-data";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
 type Tab = "hero" | "about" | "projects" | "contact" | "social" | "meta";
 
 const tabs: { key: Tab; label: string }[] = [
@@ -27,7 +29,7 @@ export default function AdminPage() {
   const handleSetup = useCallback(async () => {
     setSetupStatus("loading");
     try {
-      const res = await fetch("/api/setup", { method: "POST" });
+      const res = await fetch(`${API_BASE}/api/setup`, { method: "POST" });
       const json = await res.json();
       setSetupStatus(json.success ? "done" : "error");
       setTimeout(() => setSetupStatus("idle"), 3000);
