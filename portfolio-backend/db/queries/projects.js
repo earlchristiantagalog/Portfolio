@@ -120,9 +120,9 @@ async function replaceAllProjects(items) {
     for (let i = 0; i < items.length; i++) {
       const p = items[i];
       const { rows } = await client.query(
-        `INSERT INTO projects (id, title, description, image, category, github, live, position)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-        [p.id || undefined, p.title, p.description, p.image, p.category, p.github || '', p.live || '', i]
+        `INSERT INTO projects (title, description, image, category, github, live, position)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [p.title, p.description, p.image, p.category, p.github || '', p.live || '', i]
       );
       const projectId = rows[0].id;
       if (p.tags && p.tags.length > 0) {
