@@ -39,18 +39,21 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
   const updateSection = useCallback(
     async <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => {
-      setData((prev) => ({ ...prev, [key]: value }));
+      let snapshot: PortfolioData;
+      setData((prev) => {
+        snapshot = { ...prev, [key]: value };
+        return snapshot;
+      });
       const token = await getToken();
-      const snapshot = { ...data, [key]: value };
-      savePortfolioData(snapshot, token);
+      await savePortfolioData(snapshot!, token);
     },
-    [getToken, data]
+    [getToken]
   );
 
   const resetData = useCallback(async () => {
     setData(defaultData);
     const token = await getToken();
-    savePortfolioData(defaultData, token);
+    await savePortfolioData(defaultData, token);
   }, [getToken]);
 
   return (
