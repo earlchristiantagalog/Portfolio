@@ -2,14 +2,9 @@
 
 import type { PortfolioData } from "@/app/data/portfolio-data";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-
 export async function loadPortfolioData(): Promise<PortfolioData | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/portfolio`, {
-      cache: "no-store",
-      credentials: "include",
-    });
+    const res = await fetch("/api/portfolio", { cache: "no-store" });
     if (!res.ok) return null;
     const json = await res.json();
     return (json.data as PortfolioData) ?? null;
@@ -28,10 +23,9 @@ export async function savePortfolioData(
     };
     if (sessionToken) headers["Authorization"] = `Bearer ${sessionToken}`;
 
-    const res = await fetch(`${API_BASE}/api/admin/portfolio`, {
+    const res = await fetch("/api/admin/portfolio", {
       method: "PUT",
       headers,
-      credentials: "include",
       body: JSON.stringify(data),
     });
     return res.ok;
@@ -47,7 +41,7 @@ export async function submitContactForm(data: {
   message: string;
 }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/api/messages`, {
+    const res = await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
