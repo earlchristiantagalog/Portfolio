@@ -287,9 +287,22 @@ function HeroEditor({
         <Field label="Tagline">
           <TextArea value={local.tagline} onChange={(v) => setLocal({ ...local, tagline: v })} />
         </Field>
-        <Field label="Availability Badge">
-          <Input value={local.availability} onChange={(v) => setLocal({ ...local, availability: v })} />
-        </Field>
+        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-card-border bg-card px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-muted/50">
+          <input
+            type="checkbox"
+            checked={local.availability}
+            onChange={() => setLocal({ ...local, availability: !local.availability })}
+            className="h-4 w-4 rounded border-card-border text-primary focus:ring-primary/20"
+          />
+          <span className="font-medium">Available for work</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            local.availability
+              ? "bg-green-500/10 text-green-600 dark:text-green-400"
+              : "bg-red-500/10 text-red-600 dark:text-red-400"
+          }`}>
+            {local.availability ? "Available" : "Not Available"}
+          </span>
+        </label>
       </div>
       <div className="mt-6">
         <SaveButton onClick={save} />

@@ -2,7 +2,7 @@ export interface HeroData {
   name: string;
   title: string;
   tagline: string;
-  availability: string;
+  availability: boolean;
 }
 
 export interface Education {
@@ -69,7 +69,7 @@ export const defaultData: PortfolioData = {
     title: "JD",
     tagline:
       "A passionate Full-Stack Developer crafting modern web experiences with clean code and thoughtful design.",
-    availability: "Available for work",
+    availability: true,
   },
   about: {
     bio: [

@@ -24,12 +24,20 @@ export default function Hero() {
           {/* Left: Text Content */}
           <div className="text-center lg:text-left">
             {/* Availability badge */}
-            <div className="mb-6 inline-flex animate-fade-up items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-4 py-1.5 text-sm text-green-600 dark:text-green-400">
+            <div className={`mb-6 inline-flex animate-fade-up items-center gap-2 rounded-full border px-4 py-1.5 text-sm ${
+              hero.availability
+                ? "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400"
+                : "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+            }`}>
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
+                  hero.availability ? "bg-green-400" : "bg-red-400"
+                }`} />
+                <span className={`relative inline-flex h-2 w-2 rounded-full ${
+                  hero.availability ? "bg-green-500" : "bg-red-500"
+                }`} />
               </span>
-              {hero.availability}
+              {hero.availability ? "Available for work" : "Not available"}
             </div>
 
             {/* Heading */}
