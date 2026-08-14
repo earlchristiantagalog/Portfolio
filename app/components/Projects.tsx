@@ -15,7 +15,7 @@ export default function Projects() {
       : projects.items.filter((p) => p.category === activeTab);
 
   return (
-    <section id="projects" className="relative bg-muted/50 px-4 py-24 sm:px-6 lg:px-8">
+    <section id="projects" className="relative bg-muted/50 px-4 pb-24 pt-28 sm:px-6 lg:px-8">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-0 h-px w-1/2 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
