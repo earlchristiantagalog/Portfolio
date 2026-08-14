@@ -52,6 +52,7 @@ export async function GET() {
             category: string;
             github: string;
             live: string;
+            finished: boolean;
           }) => ({
             id: p.id,
             title: p.title,
@@ -60,6 +61,7 @@ export async function GET() {
             category: p.category,
             github: p.github,
             live: p.live,
+            finished: p.finished,
             tags: tags
               .filter((t: { project_id: string }) => t.project_id === p.id)
               .map((t: { tag: string }) => t.tag),

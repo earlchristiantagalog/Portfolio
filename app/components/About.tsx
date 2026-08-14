@@ -64,16 +64,15 @@ export default function About() {
             <div className="group w-full max-w-md">
               <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-lg shadow-black/5 transition-all hover:shadow-xl">
                 {/* Logo area */}
-                <div className="relative flex h-36 items-center justify-center bg-gradient-to-br from-primary/5 via-primary/5 to-accent/5 sm:h-44">
+                <div className="relative flex h-40 items-center justify-center bg-gradient-to-br from-primary/5 via-primary/5 to-accent/5 p-6 sm:h-52 sm:p-8">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.08),transparent_60%)]" />
-                  <div className="relative flex items-center justify-center">
+                  <div className="relative flex h-full w-full items-center justify-center">
                     <Image
                       src={about.education.logo}
                       alt={`${about.education.school} Logo`}
-                      width={120}
-                      height={63}
+                      fill
                       unoptimized
-                      className="transition-transform duration-300 group-hover:scale-110"
+                      className="object-contain transition-transform duration-300 group-hover:scale-110"
                     />
                   </div>
                 </div>

@@ -104,9 +104,16 @@ export default function Projects() {
                   <h3 className="min-w-0 truncate text-lg font-bold text-foreground">
                     {project.title}
                   </h3>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    {project.category === "School Projects" ? "School" : "Personal"}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {!project.finished && (
+                      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        W.I.P
+                      </span>
+                    )}
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {project.category === "School Projects" ? "School" : "Personal"}
+                    </span>
+                  </div>
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-muted-foreground line-clamp-2">
                   {project.description}

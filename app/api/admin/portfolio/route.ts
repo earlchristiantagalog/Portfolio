@@ -83,9 +83,9 @@ export async function PUT(request: Request) {
     for (let i = 0; i < data.projects.items.length; i++) {
       const p = data.projects.items[i];
       const { rows } = await client.query(
-        `INSERT INTO projects (title, description, image, category, github, live, position)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [p.title, p.description, p.image, p.category, p.github || "", p.live || "", i]
+        `INSERT INTO projects (title, description, image, category, github, live, position, finished)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        [p.title, p.description, p.image, p.category, p.github || "", p.live || "", i, p.finished ?? true]
       );
       const projectId = rows[0].id;
       if (p.tags && p.tags.length > 0) {

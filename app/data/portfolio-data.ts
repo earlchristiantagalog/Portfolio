@@ -28,6 +28,7 @@ export interface Project {
   github: string;
   live: string;
   category: "School Projects" | "Personal Projects";
+  finished: boolean;
 }
 
 export interface ProjectsData {
@@ -109,6 +110,7 @@ export const defaultData: PortfolioData = {
         github: "https://github.com",
         live: "https://vercel.com",
         category: "School Projects",
+        finished: true,
       },
       {
         id: "2",
@@ -120,6 +122,7 @@ export const defaultData: PortfolioData = {
         github: "https://github.com",
         live: "https://vercel.com",
         category: "School Projects",
+        finished: true,
       },
       {
         id: "3",
@@ -131,6 +134,7 @@ export const defaultData: PortfolioData = {
         github: "https://github.com",
         live: "https://vercel.com",
         category: "School Projects",
+        finished: true,
       },
       {
         id: "4",
@@ -142,6 +146,7 @@ export const defaultData: PortfolioData = {
         github: "https://github.com",
         live: "https://vercel.com",
         category: "Personal Projects",
+        finished: true,
       },
       {
         id: "5",
@@ -153,6 +158,7 @@ export const defaultData: PortfolioData = {
         github: "https://github.com",
         live: "https://vercel.com",
         category: "Personal Projects",
+        finished: true,
       },
       {
         id: "6",
@@ -164,6 +170,7 @@ export const defaultData: PortfolioData = {
         github: "https://github.com",
         live: "https://vercel.com",
         category: "Personal Projects",
+        finished: true,
       },
     ],
   },
