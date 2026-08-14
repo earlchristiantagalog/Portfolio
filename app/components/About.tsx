@@ -8,7 +8,7 @@ export default function About() {
   const { about } = data;
 
   return (
-    <section id="about" className="relative bg-muted/50 px-4 py-24 sm:px-6 lg:px-8">
+    <section id="about" className="relative overflow-hidden px-4 pb-24 pt-28 sm:px-6 lg:px-8">
       {/* Section background decoration */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute right-0 top-0 h-72 w-72 translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />

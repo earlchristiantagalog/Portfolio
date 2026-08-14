@@ -46,7 +46,7 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" className="relative px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+    <section id="contact" className="relative overflow-hidden px-4 pb-24 pt-28 sm:px-6 lg:px-8">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-40 bottom-0 h-[400px] w-[400px] rounded-full bg-accent/5 blur-3xl" />
