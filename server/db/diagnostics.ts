@@ -1,26 +1,21 @@
 import "server-only";
-import { MongoParseError, MongoServerError, MongoServerSelectionError } from "mongodb";
+import { Prisma } from "@/generated/prisma";
 
 /**
  * Return fixed diagnostic labels only: driver error messages can contain
  * connection details and must never be sent to logs or API responses.
  */
 export function databaseErrorCategory(error: unknown): string {
-  if (error instanceof Error && error.message === "MongoDB is not configured") {
-    return "MONGODB_ENV_MISSING";
+  if (error instanceof Error && error.message === "MySQL is not configured") {
+    return "DATABASE_URL_MISSING";
   }
-  if (error instanceof MongoParseError) return "MONGODB_URI_INVALID";
-  if (error instanceof MongoServerSelectionError) return "MONGODB_SERVER_UNREACHABLE";
-  if (error instanceof MongoServerError) {
-    if (error.code === 18 || error.code === 8000) return "MONGODB_AUTH_FAILED";
-    if (error.code === 13) return "MONGODB_PERMISSION_DENIED";
-    return "MONGODB_SERVER_ERROR";
+  if (error instanceof Error && error.message === "MySQL URI is invalid") return "DATABASE_URL_INVALID";
+  if (error instanceof Prisma.PrismaClientInitializationError) return "MYSQL_CONNECTION_OR_CONFIGURATION_ERROR";
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P1000") return "MYSQL_AUTH_FAILED";
+    if (error.code === "P1001" || error.code === "P1002") return "MYSQL_SERVER_UNREACHABLE";
+    if (error.code === "P2021") return "MYSQL_TABLE_MISSING";
+    return "MYSQL_DATABASE_ERROR";
   }
-  if (error && typeof error === "object" && "code" in error) {
-    const code = error.code;
-    if (code === "ENOTFOUND" || code === "ENODATA" || code === "EREFUSED" || code === "ETIMEOUT") {
-      return "MONGODB_DNS_ERROR";
-    }
-  }
-  return "MONGODB_OR_SERVER_ERROR";
+  return "MYSQL_OR_SERVER_ERROR";
 }

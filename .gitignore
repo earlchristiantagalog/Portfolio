@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Keep database exports out of version control
 /database/
+
+# Generated Prisma client
+/generated/

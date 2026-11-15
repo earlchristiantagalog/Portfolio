@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { getAdminAccess, isSameOrigin } from "@/server/auth/admin";
-import { getDatabase } from "@/server/db/mongodb";
+import { getPrisma } from "@/server/db/prisma";
 
 export const runtime = "nodejs";
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -40,11 +40,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid or unsupported image." }, { status: 400 });
     }
     const data = await processor.rotate().resize({ width: 2000, height: 1200, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer();
-    const db = await getDatabase();
-    const result = await db.collection("project_images").insertOne({
-      data, contentType: "image/webp", createdAt: new Date(),
+    const result = await getPrisma().projectImage.create({
+      data: { data, contentType: "image/webp", createdAt: new Date() },
+      select: { id: true },
     });
-    return NextResponse.json({ url: `/api/project-images/${result.insertedId.toHexString()}` });
+    return NextResponse.json({ url: `/api/project-images/${result.id}` });
   } catch (error) {
     if (error instanceof Error && /input|image|pixel|format|corrupt|unsupported/i.test(error.message)) {
       return NextResponse.json({ error: "Invalid or unsupported image." }, { status: 400 });
