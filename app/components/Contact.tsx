@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { usePortfolio } from "./PortfolioContext";
 import { submitContactForm } from "@/app/lib/portfolio-service";
+import { CopyButton } from "./ui/CopyButton";
+
+type Status = "idle" | "sending" | "success" | "error";
 
 export default function Contact() {
   const { data } = usePortfolio();
@@ -10,8 +13,7 @@ export default function Contact() {
 
   const [formState, setFormState] = useState({ name: "", email: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -19,17 +21,18 @@ export default function Contact() {
     if (!formState.email.trim()) {
       next.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.email)) {
-      next.email = "Invalid email address";
+      next.email = "Enter a valid email address";
     }
     if (!formState.message.trim()) next.message = "Message is required";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!validate()) return;
-    setSubmitting(true);
+
+    setStatus("sending");
 
     const success = await submitContactForm({
       name: formState.name,
@@ -37,175 +40,292 @@ export default function Contact() {
       message: formState.message,
     });
 
-    setSubmitting(false);
     if (success) {
-      setSubmitted(true);
+      setStatus("success");
       setFormState({ name: "", email: "", message: "" });
-      setTimeout(() => setSubmitted(false), 4000);
+      window.setTimeout(() => setStatus("idle"), 5000);
+    } else {
+      setStatus("error");
     }
   };
 
-  return (
-    <section id="contact" className="relative overflow-hidden px-4 pb-24 pt-28 sm:px-6 lg:px-8">
-      {/* Background decoration */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-40 bottom-0 h-[400px] w-[400px] rounded-full bg-accent/5 blur-3xl" />
-        <div className="absolute -right-40 top-0 h-[400px] w-[400px] rounded-full bg-primary/5 blur-3xl" />
-      </div>
+  const sending = status === "sending";
 
-      <div className="relative mx-auto max-w-6xl">
-        {/* Section header */}
-        <div className="mx-auto mb-16 max-w-2xl text-center">
-          <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-            Contact
-          </span>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            {contact.heading}
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            {contact.subtitle}
-          </p>
+  return (
+    <section
+      id="contact"
+      className="relative overflow-hidden px-4 pb-24 pt-32 sm:px-6 lg:px-10 lg:pt-40"
+    >
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="flex flex-col gap-8 border-b border-card-border/60 pb-10 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="label text-primary">Transmission / 03</span>
+              <span className="h-px w-8 bg-primary/50" aria-hidden="true" />
+              <span className="label">Contact channel</span>
+            </div>
+
+            <h1 className="page-title mt-6 text-foreground">
+              {contact.heading}
+              <span className="text-primary">.</span>
+            </h1>
+
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              {contact.subtitle}
+            </p>
+          </div>
+
+          <div className="hud flex w-full max-w-xs items-center gap-4 p-4">
+            <span className="clip-corner-sm flex h-11 w-11 shrink-0 items-center justify-center border border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
+              <span className="status-ring" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="label-sm text-muted-foreground">Channel status</p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                {data.hero.availability ? "Open for inquiries" : "Currently unavailable"}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* Left - Contact Form */}
-          <div>
-            <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="mt-14 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
+          {/* Composer */}
+          <div className="hud clip-corner relative overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-card-border px-5 py-3">
+              <span className="label text-primary">Message composer</span>
+              <span className="label-sm text-muted-foreground">
+                ENC · TLS 1.3
+              </span>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6" noValidate>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-foreground">
+                  <label htmlFor="name" className="label-sm mb-2 block">
                     Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="name"
+                    name="name"
+                    autoComplete="name"
                     value={formState.name}
-                    onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+                    onChange={(event) =>
+                      setFormState({ ...formState, name: event.target.value })
+                    }
                     placeholder="John Doe"
-                    className={`w-full rounded-xl border bg-card px-4 py-3 text-sm text-foreground placeholder-muted-foreground/50 transition-colors focus:outline-none focus:ring-2 ${
-                      errors.name
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                        : "border-card-border focus:border-primary focus:ring-primary/20"
-                    }`}
+                    aria-invalid={Boolean(errors.name)}
+                    aria-describedby={errors.name ? "name-error" : undefined}
+                    className={`field ${errors.name ? "field-error" : ""}`}
                   />
-                  {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                  {errors.name && (
+                    <p id="name-error" className="label-sm mt-2 text-red-500">
+                      {errors.name}
+                    </p>
+                  )}
                 </div>
+
                 <div>
-                  <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
+                  <label htmlFor="email" className="label-sm mb-2 block">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     id="email"
+                    name="email"
+                    autoComplete="email"
                     value={formState.email}
-                    onChange={(e) => setFormState({ ...formState, email: e.target.value })}
+                    onChange={(event) =>
+                      setFormState({ ...formState, email: event.target.value })
+                    }
                     placeholder="john@example.com"
-                    className={`w-full rounded-xl border bg-card px-4 py-3 text-sm text-foreground placeholder-muted-foreground/50 transition-colors focus:outline-none focus:ring-2 ${
-                      errors.email
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                        : "border-card-border focus:border-primary focus:ring-primary/20"
-                    }`}
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                    className={`field ${errors.email ? "field-error" : ""}`}
                   />
-                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                  {errors.email && (
+                    <p id="email-error" className="label-sm mt-2 text-red-500">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
               </div>
+
               <div>
-                <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-foreground">
+                <label htmlFor="message" className="label-sm mb-2 block">
                   Message <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="message"
-                  rows={5}
+                  name="message"
+                  rows={6}
                   value={formState.message}
-                  onChange={(e) => setFormState({ ...formState, message: e.target.value })}
+                  onChange={(event) =>
+                    setFormState({ ...formState, message: event.target.value })
+                  }
                   placeholder="Tell me about your project or just say hi..."
-                  className={`w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm text-foreground placeholder-muted-foreground/50 transition-colors focus:outline-none focus:ring-2 ${
-                    errors.message
-                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                      : "border-card-border focus:border-primary focus:ring-primary/20"
-                  }`}
+                  aria-invalid={Boolean(errors.message)}
+                  aria-describedby={errors.message ? "message-error" : undefined}
+                  className={`field resize-none ${errors.message ? "field-error" : ""}`}
                 />
-                {errors.message && <p className="mt-1 text-xs text-red-500">{errors.message}</p>}
-              </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary opacity-0 transition-opacity group-hover:opacity-100" />
-                <span className="relative">{submitting ? "Sending..." : "Send Message"}</span>
-                {!submitting && (
-                  <svg className="relative h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                {errors.message && (
+                  <p id="message-error" className="label-sm mt-2 text-red-500">
+                    {errors.message}
+                  </p>
                 )}
-              </button>
-            </form>
-
-            {/* Success toast */}
-            {submitted && (
-              <div className="mt-4 animate-fade-up rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-600 dark:text-green-400">
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Message sent successfully! I&apos;ll get back to you soon.
-                </div>
               </div>
-            )}
+
+              <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="btn btn-primary clip-corner w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                >
+                  {sending ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border border-current border-t-transparent" aria-hidden="true" />
+                      Transmitting
+                    </>
+                  ) : (
+                    <>
+                      Send message
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+
+                <span className="label-sm text-muted-foreground">
+                  Fields marked <span className="text-red-500">*</span> required
+                </span>
+              </div>
+
+              {status === "success" && (
+                <div
+                  role="status"
+                  className="animate-fade-up flex items-start gap-3 border border-emerald-500/30 bg-emerald-500/10 px-4 py-3"
+                >
+                  <span className="status-ring mt-1 text-emerald-500" aria-hidden="true" />
+                  <div>
+                    <p className="label-sm text-emerald-600 dark:text-emerald-400">
+                      Message queued
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Transmission received. I&apos;ll get back to you soon.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {status === "error" && (
+                <div
+                  role="alert"
+                  className="animate-fade-up flex items-start gap-3 border border-red-500/30 bg-red-500/10 px-4 py-3"
+                >
+                  <span className="mt-0.5 text-red-500" aria-hidden="true">!</span>
+                  <div>
+                    <p className="label-sm text-red-600 dark:text-red-400">
+                      Transmission failed
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      The message could not be sent. Email me directly at{" "}
+                      <a href={`mailto:${social.email}`} className="text-primary underline underline-offset-2">
+                        {social.email}
+                      </a>
+                      .
+                    </p>
+                  </div>
+                </div>
+              )}
+            </form>
           </div>
 
-          {/* Right - Contact Info & Social */}
-          <div className="flex flex-col justify-center space-y-8">
-            {/* Info cards */}
-            <div className="space-y-4">
-              <div className="group flex items-start gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-sm transition-all hover:shadow-md">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-semibold text-foreground">Email</h4>
-                  <a href={`mailto:${social.email}`} className="break-all text-sm text-muted-foreground transition-colors hover:text-primary">
+          {/* Channels */}
+          <div className="space-y-4">
+            <div className="hud clip-corner overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-card-border px-5 py-3">
+                <span className="label text-primary">Channels</span>
+                <span className="label-sm text-muted-foreground">03 open</span>
+              </div>
+
+              <ul className="divide-y divide-card-border/60">
+                <li className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="label text-muted-foreground">Email</span>
+                    <CopyButton value={social.email} />
+                  </div>
+                  <a
+                    href={`mailto:${social.email}`}
+                    className="mono mt-3 block break-all text-sm text-foreground transition-colors hover:text-primary"
+                  >
                     {social.email}
                   </a>
-                </div>
-              </div>
+                </li>
 
-              <div className="group flex items-start gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-sm transition-all hover:shadow-md">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-semibold text-foreground">GitHub</h4>
-                  <a href={social.github} target="_blank" rel="noopener noreferrer" className="break-all text-sm text-muted-foreground transition-colors hover:text-primary">
-                    {social.github.replace("https://", "")}
+                <li className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="label text-muted-foreground">GitHub</span>
+                    <a
+                      href={social.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="label-sm inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      Open
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H8M17 7v9" />
+                      </svg>
+                    </a>
+                  </div>
+                  <a
+                    href={social.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mono mt-3 block break-all text-sm text-foreground transition-colors hover:text-primary"
+                  >
+                    {social.github.replace(/^https?:\/\//, "")}
                   </a>
-                </div>
-              </div>
+                </li>
 
-              <div className="group flex items-start gap-4 rounded-2xl border border-card-border bg-card p-5 shadow-sm transition-all hover:shadow-md">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-semibold text-foreground">LinkedIn</h4>
-                  <a href={social.linkedin} target="_blank" rel="noopener noreferrer" className="break-all text-sm text-muted-foreground transition-colors hover:text-primary">
-                    {social.linkedin.replace("https://", "")}
+                <li className="p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="label text-muted-foreground">LinkedIn</span>
+                    <a
+                      href={social.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="label-sm inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
+                    >
+                      Open
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H8M17 7v9" />
+                      </svg>
+                    </a>
+                  </div>
+                  <a
+                    href={social.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mono mt-3 block break-all text-sm text-foreground transition-colors hover:text-primary"
+                  >
+                    {social.linkedin.replace(/^https?:\/\//, "")}
                   </a>
-                </div>
-              </div>
+                </li>
+              </ul>
             </div>
 
-            {/* Availability note */}
-            <div className="rounded-2xl border border-card-border bg-gradient-to-br from-primary/5 to-accent/5 p-6 shadow-sm">
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                I&apos;m currently open to new opportunities and collaborations. Whether you have a project idea, a question, or just want to connect, don&apos;t hesitate to reach out!
+            <div className="hud p-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="label text-primary">Availability</span>
+                <span className="label-sm flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <span className="status-ring" aria-hidden="true" />
+                  {data.hero.availability ? "Available" : "Unavailable"}
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                {data.content.contactAvailability}
               </p>
             </div>
           </div>

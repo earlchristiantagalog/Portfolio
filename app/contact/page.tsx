@@ -6,7 +6,7 @@ export default function ContactPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         <Contact />
       </main>
       <Footer />

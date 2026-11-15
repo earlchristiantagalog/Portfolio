@@ -6,7 +6,7 @@ export default function AboutPage() {
   return (
     <>
       <Navbar />
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         <About />
       </main>
       <Footer />

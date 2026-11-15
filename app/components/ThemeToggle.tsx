@@ -4,37 +4,26 @@ import { useTheme } from "./ThemeProvider";
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const dark = theme === "dark";
 
   return (
     <button
       onClick={toggleTheme}
-      aria-label="Toggle theme"
-      className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition-all hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+      aria-label={`Switch to ${dark ? "light" : "dark"} mode`}
+      title={`Switch to ${dark ? "light" : "dark"} mode`}
+      className="clip-corner-sm group relative flex h-10 w-10 items-center justify-center border border-card-border bg-card/50 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
     >
-      {theme === "dark" ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
+      <span className="absolute right-0 top-0 h-1.5 w-1.5 bg-primary/70" aria-hidden="true" />
+      {dark ? (
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+            d="M12 3v1.5m0 15V21m9-9h-1.5m-15 0H3m15.364 6.364l-1.06-1.06M6.696 6.696l-1.06-1.06m12.728 0l-1.06 1.06M6.696 17.304l-1.06 1.06M16 12a4 4 0 11-8 0 4 4 0 018 0z"
           />
         </svg>
       ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden="true">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

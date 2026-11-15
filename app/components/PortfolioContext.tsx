@@ -1,30 +1,28 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { defaultData, type PortfolioData } from "@/app/data/portfolio-data";
-import { loadPortfolioData, savePortfolioData } from "@/app/lib/portfolio-service";
+import type { PortfolioData } from "@/app/data/portfolio-data";
+import { loadPortfolioData, savePortfolioData, savePortfolioSection } from "@/app/lib/portfolio-service";
 
 const PortfolioContext = createContext<{
   data: PortfolioData;
   loading: boolean;
-  updateSection: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
-  resetData: () => void;
+  updateSection: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
+  resetData: () => Promise<boolean>;
 }>({
-  data: defaultData,
+  data: null as unknown as PortfolioData,
   loading: true,
-  updateSection: () => {},
-  resetData: () => {},
+  updateSection: async () => false,
+  resetData: async () => false,
 });
 
 export function usePortfolio() {
   return useContext(PortfolioContext);
 }
 
-export function PortfolioProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<PortfolioData>(defaultData);
+export function PortfolioProvider({ children, initialData }: { children: React.ReactNode; initialData: PortfolioData }) {
+  const [data, setData] = useState<PortfolioData>(initialData);
   const [loading, setLoading] = useState(true);
-  const { getToken } = useAuth();
 
   useEffect(() => {
     async function init() {
@@ -39,22 +37,18 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
   const updateSection = useCallback(
     async <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => {
-      let snapshot: PortfolioData;
-      setData((prev) => {
-        snapshot = { ...prev, [key]: value };
-        return snapshot;
-      });
-      const token = await getToken();
-      await savePortfolioData(snapshot!, token);
+      const success = await savePortfolioSection(key, value);
+      if (success) setData((previous) => ({ ...previous, [key]: value }));
+      return success;
     },
-    [getToken]
+    []
   );
 
   const resetData = useCallback(async () => {
-    setData(defaultData);
-    const token = await getToken();
-    await savePortfolioData(defaultData, token);
-  }, [getToken]);
+    const success = await savePortfolioData(initialData);
+    if (success) setData(initialData);
+    return success;
+  }, [initialData]);
 
   return (
     <PortfolioContext.Provider value={{ data, loading, updateSection, resetData }}>

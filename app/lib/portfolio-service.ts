@@ -13,22 +13,33 @@ export async function loadPortfolioData(): Promise<PortfolioData | null> {
   }
 }
 
-export async function savePortfolioData(
-  data: PortfolioData,
-  sessionToken: string | null
-): Promise<boolean> {
+export async function savePortfolioData(data: PortfolioData): Promise<boolean> {
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (sessionToken) headers["Authorization"] = `Bearer ${sessionToken}`;
-
     const res = await fetch("/api/admin/portfolio", {
       method: "PUT",
       headers,
       body: JSON.stringify(data),
     });
     return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function savePortfolioSection<K extends keyof PortfolioData>(
+  section: K,
+  value: PortfolioData[K],
+): Promise<boolean> {
+  try {
+    const response = await fetch("/api/admin/portfolio", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ section, value }),
+    });
+    return response.ok;
   } catch {
     return false;
   }
