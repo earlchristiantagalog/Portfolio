@@ -1,89 +1,76 @@
 # Portfolio
 
-A modern, fully-responsive portfolio website built with [Next.js](https://nextjs.org) (App Router) and [Tailwind CSS v4](https://tailwindcss.com). Features a built-in CMS admin panel, dark mode, and optional [Appwrite](https://appwrite.io) persistence.
+A Next.js portfolio with a private admin login and MongoDB persistence.
 
-## Tech Stack
+## Setup
 
-| Layer | Technology |
-|-------|------------|
-| Framework | Next.js 16 (App Router) |
-| Styling | Tailwind CSS v4 |
-| Fonts | Poppins via `next/font` |
-| State | React Context + `useSyncExternalStore` |
-| CMS | Built-in admin panel at `/admin` |
-| Persistence | localStorage (default) or Appwrite |
+1. Install dependencies with `npm install`.
+2. Create `.env.local` (never commit it) with:
 
-## Pages
+   ```env
+   MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/
+   MONGODB_DB=portfolio
+   ADMIN_USERNAME=your_admin_username
+   ADMIN_PASSWORD_HASH=scrypt:YOUR_SALT:YOUR_PASSWORD_HASH
+   ```
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page with hero, skills preview, stats, and CTA |
-| `/about` | About section with bio, tech stack, and education |
-| `/projects` | Projects showcase with category filtering |
-| `/contact` | Contact form with validation and social links |
-| `/admin` | Content management system for all portfolio data |
+3. Create a MongoDB database user with access only to the portfolio database.
+   Configure the Atlas network access list for your deployment. Use a unique,
+   strong password and URL-encode special characters in the connection string.
+4. Run `node scripts/hash-admin-password.cjs` to generate the password hash,
+   then paste the output into `.env.local`. The password is visible while typed;
+   run this in a private terminal. Use a unique password of at least 16 characters.
+5. Run `npm run dev` and open `http://localhost:3000`.
+   Sign in at `/admin` and save a section to create the portfolio document.
 
-## Getting Started
+MongoDB collections are created on first write: `portfolio` contains the public
+portfolio document, while `messages` contains private contact submissions.
+Each admin section's **Save Changes** button writes that section to the
+`portfolio` collection. On the first save, the remaining sections are initialized
+with the built-in defaults. Refresh the site to see saved changes.
+In **Projects**, expand a project and upload a JPEG, PNG, or WebP banner up to
+3 MB, then click **Save Changes** to publish it. Images are converted to WebP
+and stored in MongoDB's `project_images` collection. Uploaded images remain in
+that collection if a banner is replaced, removed, or not saved; they are not
+automatically deleted.
+The **Site Content** tab controls the home-page section headings, expertise
+cards, role, graduation year, about-page introduction and principles, contact
+availability text, and footer description. The other tabs manage the hero,
+biography, skills, education, projects, contact details, social links, and SEO
+metadata. Existing records without the new fields use defaults until saved.
+There is no public endpoint for reading messages. If the database is empty or
+unavailable, the site displays its built-in example content; CMS saves and
+contact submissions require a working connection.
 
-```bash
-npm run dev
-```
+Existing PostgreSQL data is **not automatically migrated**. If you have an
+existing database, export/import its contents separately before retiring it.
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+## Data and security
 
-## Admin Panel
+- `server/db/`, `server/auth/`, and `server/portfolio/` are server-only modules.
+  Credentials belong in server environment variables, never `NEXT_PUBLIC_*`.
+- `app/data/portfolio-data.ts` contains TypeScript types only. Default content
+  lives in `server/portfolio/defaults.ts`.
+- Portfolio content is intentionally public: it must be delivered to a visitor's
+  browser to render the site, and is available through `GET /api/portfolio`.
+  Do not put private data in portfolio fields.
+- `PUT /api/admin/portfolio` checks the server-side admin session. Sessions use
+  an HTTP-only, same-site cookie and expire after eight hours; logging out revokes
+  the stored session. Login attempts are limited globally to five per 15 minutes
+  using MongoDB. A shared limit can be exhausted by an attacker, so also use
+  edge rate limiting and monitoring. Always use HTTPS in production and configure
+  your reverse proxy to preserve the public origin for same-origin checks.
+- Contact form writes are public; add rate limiting and spam
+  protection at the deployment edge before production.
+- `.env*` files are ignored by Git. Never put secrets or database exports under
+  `public/`.
 
-Visit `/admin` to edit all portfolio content — hero, about, projects, contact, and social links. Changes are saved to localStorage by default.
+## Structure
 
-### Appwrite Setup (Optional)
-
-To persist data across sessions, configure Appwrite:
-
-1. Create a project at [cloud.appwrite.io](https://cloud.appwrite.io)
-2. Copy `.env.example` to `.env` and fill in the values
-3. Generate an API key with `databases.write` scope in Appwrite Console
-4. Visit `/admin` and click **Setup DB** to auto-create the database and collection
-
-```env
-NEXT_PUBLIC_APPWRITE_ENDPOINT=https://nyc.cloud.appwrite.io/v1
-NEXT_PUBLIC_APPWRITE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_APPWRITE_DATABASE_ID=portfolio_db
-APPWRITE_API_KEY=your_api_key
-```
-
-The data is stored across normalized collections (`hero`, `about_bio`, `skills`, `education`, `projects`, `project_tags`, `projects_config`, `contact`, `social`, `meta`). The `database/` folder contains CSV seeds that match the collection columns.
-
-If Appwrite is unavailable, the app seamlessly falls back to localStorage.
-
-## Build
-
-```bash
-npm run build
-```
-
-## Project Structure
-
-```
-app/
-├── admin/             # Admin panel (Clerk-protected)
-├── api/data/          # Portfolio data API (GET/POST)
-├── api/setup/         # Appwrite DB setup endpoint
-├── components/        # React components
-├── data/              # Type definitions & default data
-├── lib/               # Appwrite admin & data layer
-├── sign-in/           # Custom sign-in page
-├── globals.css        # Tailwind theme & animations
-├── layout.tsx         # Root layout
-└── page.tsx           # Home page
-```
-
-## Authentication
-
-The `/admin` route is protected with [Clerk](https://clerk.com). Unauthenticated visitors are redirected to the custom sign-in page at `/sign-in`.
-
-```env
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
-CLERK_SECRET_KEY=sk_live_...
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/admin
+```text
+app/                  Pages, API route handlers, components, and shared types
+server/db/            MongoDB connection
+server/auth/          Server-side administrator authorization
+server/portfolio/     Repository, validation, and example defaults
+public/               Publicly accessible static assets
 ```

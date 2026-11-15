@@ -1,22 +1,20 @@
 import { NextResponse } from "next/server";
-import pool from "@/app/lib/db";
+import { saveMessage } from "@/server/portfolio/repository";
+import { messageSchema } from "@/server/portfolio/schema";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, subject, message } = await request.json();
-
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: "Name, email, and message are required" }, { status: 400 });
+    const body: unknown = await request.json().catch(() => null);
+    const result = messageSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json({ error: "Invalid message" }, { status: 400 });
     }
-
-    await pool.query(
-      "INSERT INTO messages (name, email, subject, message) VALUES ($1, $2, $3, $4)",
-      [name, email, subject || "", message]
-    );
-
+    await saveMessage(result.data);
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("POST /api/messages error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch {
+    console.error("Unable to save contact message");
+    return NextResponse.json({ error: "Unable to send message" }, { status: 500 });
   }
 }

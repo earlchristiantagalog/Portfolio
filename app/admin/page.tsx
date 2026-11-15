@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useUser, SignOutButton } from "@clerk/nextjs";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { usePortfolio } from "@/app/components/PortfolioContext";
-import { AdminAuthProvider } from "./AdminAuthProvider";
-import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData, MetaData } from "@/app/data/portfolio-data";
+import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData, MetaData, SiteContent } from "@/app/data/portfolio-data";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-
-type Tab = "hero" | "about" | "projects" | "contact" | "social" | "meta";
+type Tab = "hero" | "about" | "projects" | "contact" | "social" | "meta" | "content";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "hero", label: "Hero" },
+  { key: "content", label: "Site Content" },
   { key: "about", label: "About" },
   { key: "projects", label: "Projects" },
   { key: "contact", label: "Contact" },
@@ -22,43 +21,27 @@ const tabs: { key: Tab; label: string }[] = [
 
 export default function AdminPage() {
   const { data, loading, updateSection, resetData } = usePortfolio();
-  const { user, isLoaded } = useUser();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("hero");
   const [saved, setSaved] = useState(false);
-  const [setupStatus, setSetupStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-
-  const handleSetup = useCallback(async () => {
-    if (!API_BASE) {
-      setSetupStatus("error");
-      alert("NEXT_PUBLIC_API_URL is not set. Please configure it in your deployment environment.");
-      setTimeout(() => setSetupStatus("idle"), 3000);
-      return;
-    }
-    setSetupStatus("loading");
+  const handleSignOut = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/setup`, { method: "POST" });
-      const json = await res.json();
-      setSetupStatus(json.success ? "done" : "error");
-      if (!json.success && json.error) {
-        alert(`Setup failed: ${json.error}`);
-      }
-      setTimeout(() => setSetupStatus("idle"), 3000);
-    } catch (err: any) {
-      console.error("Setup error:", err);
-      setSetupStatus("error");
-      alert(`Setup failed: ${err?.message || "Network error"}`);
-      setTimeout(() => setSetupStatus("idle"), 3000);
+      const response = await fetch("/api/admin/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Sign out failed");
+      router.replace("/sign-in");
+      router.refresh();
+    } catch {
+      alert("Unable to sign out. Please try again.");
     }
-  }, []);
-
+  };
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (confirm("Reset all content to defaults?")) {
-      resetData();
+      if (!(await resetData())) alert("Reset failed. Check your connection and permissions.");
     }
   };
 
@@ -76,29 +59,15 @@ export default function AdminPage() {
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isLoaded && user && (
-              <span className="hidden max-w-40 truncate text-sm text-muted-foreground md:inline">
-                {user.fullName ?? user.primaryEmailAddress?.emailAddress}
-              </span>
-            )}
-            <SignOutButton>
-              <button className="rounded-xl border border-card-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm sm:px-4">
+              <button onClick={handleSignOut} className="rounded-xl border border-card-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm sm:px-4">
                 Sign Out
               </button>
-            </SignOutButton>
             <Link
               href="/"
               className="hidden rounded-xl border border-card-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:text-foreground hover:shadow-sm sm:inline-block sm:px-4"
             >
               View Portfolio
             </Link>
-            <button
-              onClick={handleSetup}
-              disabled={setupStatus === "loading"}
-              className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-all hover:-translate-y-0.5 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
-            >
-              {setupStatus === "loading" ? "Setting up..." : setupStatus === "done" ? "Ready!" : setupStatus === "error" ? "Failed" : "Setup DB"}
-            </button>
             <button
               onClick={handleReset}
               className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-medium text-red-600 transition-all hover:-translate-y-0.5 hover:bg-red-500/20 dark:text-red-400 sm:px-4"
@@ -109,7 +78,6 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <AdminAuthProvider>
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Loading state */}
           {loading && (
@@ -160,6 +128,9 @@ export default function AdminPage() {
               {activeTab === "hero" && (
                 <HeroEditor data={data} update={updateSection} onSave={handleSave} />
               )}
+              {activeTab === "content" && (
+                <ContentEditor data={data.content} update={updateSection} onSave={handleSave} />
+              )}
               {activeTab === "about" && (
                 <AboutEditor data={data} update={updateSection} onSave={handleSave} />
               )}
@@ -178,7 +149,6 @@ export default function AdminPage() {
             </>
           )}
         </div>
-      </AdminAuthProvider>
     </div>
   );
 }
@@ -233,14 +203,26 @@ function TextArea({
   );
 }
 
-function SaveButton({ onClick }: { onClick: () => void }) {
+function SaveButton({ onClick, disabled = false }: { onClick: () => Promise<void>; disabled?: boolean }) {
+  const [saving, setSaving] = useState(false);
+  const handleClick = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onClick();
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <button
-      onClick={onClick}
-      className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl"
+      type="button"
+      onClick={handleClick}
+      disabled={saving || disabled}
+      className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary opacity-0 transition-opacity group-hover:opacity-100" />
-      <span className="relative">Save Changes</span>
+      <span className="relative">{saving ? "Saving…" : "Save Changes"}</span>
     </button>
   );
 }
@@ -254,6 +236,99 @@ function SectionCard({ title, children }: { title: string; children: React.React
   );
 }
 
+function ContentEditor({
+  data,
+  update,
+  onSave,
+}: {
+  data: SiteContent;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
+  onSave: () => void;
+}) {
+  const [local, setLocal] = useState<SiteContent>(() => structuredClone(data));
+  const [principles, setPrinciples] = useState(() => data.principles.join("\n"));
+  const [stacks, setStacks] = useState(() => data.expertise.map((item) => item.stack.join(", ")));
+  const setField = (key: keyof SiteContent, value: string) => setLocal((current) => ({ ...current, [key]: value }));
+  const save = async () => {
+    const content = {
+      ...local,
+      principles: principles.split("\n").map((item) => item.trim()).filter(Boolean),
+      expertise: local.expertise.map((item, index) => ({
+        ...item,
+        stack: (stacks[index] ?? "").split(",").map((entry) => entry.trim()).filter(Boolean),
+      })),
+    };
+    if (await update("content", content)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
+  };
+  const fields: { key: keyof SiteContent; label: string; multiline?: boolean }[] = [
+    { key: "role", label: "Professional role" },
+    { key: "aboutIntro", label: "About page introduction", multiline: true },
+    { key: "graduationYear", label: "Expected graduation (leave blank if not applicable)" },
+    { key: "expertiseHeading", label: "Expertise heading" },
+    { key: "expertiseDescription", label: "Expertise introduction", multiline: true },
+    { key: "overviewHeading", label: "Overview heading" },
+    { key: "overviewDescription", label: "Overview introduction", multiline: true },
+    { key: "featuredHeading", label: "Featured projects heading" },
+    { key: "featuredDescription", label: "Featured projects introduction", multiline: true },
+    { key: "ctaHeading", label: "Contact call-to-action heading" },
+    { key: "ctaDescription", label: "Contact call-to-action text", multiline: true },
+    { key: "footerDescription", label: "Footer description", multiline: true },
+    { key: "contactAvailability", label: "Contact availability description", multiline: true },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <SectionCard title="Site-wide content">
+        <p className="mb-6 text-sm text-muted-foreground">Edit the text shown across the home, about, contact and footer sections. Save applies this whole tab.</p>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {fields.map(({ key, label, multiline }) => (
+            <Field key={key} label={label}>
+              {multiline
+                ? <TextArea value={local[key] as string} onChange={(value) => setField(key, value)} />
+                : <Input value={local[key] as string} onChange={(value) => setField(key, value)} />}
+            </Field>
+          ))}
+          <Field label="Operating principles (one per line)">
+            <TextArea value={principles} onChange={setPrinciples} />
+          </Field>
+        </div>
+      </SectionCard>
+      <SectionCard title="Expertise cards">
+        <div className="space-y-5">
+          {local.expertise.map((item, index) => (
+            <div key={index} className="space-y-4 border border-card-border p-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-medium">Card {index + 1}</h3>
+                <button type="button" className="text-sm text-red-500" onClick={() => {
+                  setLocal((current) => ({ ...current, expertise: current.expertise.filter((_, i) => i !== index) }));
+                  setStacks((current) => current.filter((_, i) => i !== index));
+                }}>Remove</button>
+              </div>
+              {(["title", "subtitle", "description"] as const).map((key) => (
+                <Field key={key} label={key[0].toUpperCase() + key.slice(1)}>
+                  <Input value={item[key]} onChange={(value) => setLocal((current) => ({
+                    ...current,
+                    expertise: current.expertise.map((entry, i) => i === index ? { ...entry, [key]: value } : entry),
+                  }))} />
+                </Field>
+              ))}
+              <Field label="Technologies (comma-separated)">
+                <Input value={stacks[index] ?? ""} onChange={(value) => setStacks((current) => current.map((entry, i) => i === index ? value : entry))} />
+              </Field>
+            </div>
+          ))}
+          <button type="button" className="btn btn-ghost" onClick={() => {
+            setLocal((current) => ({ ...current, expertise: [...current.expertise, { title: "", subtitle: "", description: "", stack: [] }] }));
+            setStacks((current) => [...current, ""]);
+          }}>Add expertise card</button>
+        </div>
+      </SectionCard>
+      <SaveButton onClick={save} />
+    </div>
+  );
+}
+
 /* ───── Hero Editor ───── */
 function HeroEditor({
   data,
@@ -261,7 +336,7 @@ function HeroEditor({
   onSave,
 }: {
   data: PortfolioData;
-  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<HeroData>({ ...data.hero });
@@ -270,9 +345,9 @@ function HeroEditor({
     setLocal({ ...data.hero });
   }, [data.hero]);
 
-  const save = () => {
-    update("hero", local);
-    onSave();
+  const save = async () => {
+    if (await update("hero", local)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
   };
 
   return (
@@ -318,7 +393,7 @@ function AboutEditor({
   onSave,
 }: {
   data: PortfolioData;
-  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<AboutData>({
@@ -336,9 +411,9 @@ function AboutEditor({
     });
   }, [data.about]);
 
-  const save = () => {
-    update("about", local);
-    onSave();
+  const save = async () => {
+    if (await update("about", local)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
   };
 
   const updateBio = (index: number, value: string) => {
@@ -432,7 +507,7 @@ function ProjectsEditor({
   onSave,
 }: {
   data: PortfolioData;
-  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<ProjectsData>({
@@ -443,6 +518,8 @@ function ProjectsEditor({
   });
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [newTag, setNewTag] = useState("");
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     setLocal({
@@ -453,16 +530,39 @@ function ProjectsEditor({
     });
   }, [data.projects]);
 
-  const save = () => {
-    update("projects", local);
-    onSave();
+  const save = async () => {
+    if (await update("projects", local)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
   };
 
   const updateProject = (id: string, field: string, value: string) => {
-    setLocal({
-      ...local,
-      items: local.items.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
-    });
+    setLocal((current) => ({
+      ...current,
+      items: current.items.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+    }));
+  };
+
+  const uploadImage = async (id: string, file: File) => {
+    setUploadError("");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 3 * 1024 * 1024) {
+      setUploadError("Choose a JPEG, PNG, or WebP image no larger than 3 MB.");
+      return;
+    }
+    setUploading(id);
+    try {
+      const response = await fetch("/api/admin/project-images", {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result.url !== "string") throw new Error(result.error || "Upload failed.");
+      updateProject(id, "image", result.url);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Upload failed. Please try again.");
+    } finally {
+      setUploading(null);
+    }
   };
 
   const toggleFinished = (id: string) => {
@@ -492,7 +592,7 @@ function ProjectsEditor({
       id,
       title: "New Project",
       description: "Project description",
-      image: "/file.svg",
+      image: "",
       tags: [],
       github: "https://github.com",
       live: "https://vercel.com",
@@ -604,9 +704,32 @@ function ProjectsEditor({
                         <Input value={project.live} onChange={(v) => updateProject(project.id, "live", v)} />
                       </Field>
                     </div>
-                    <Field label="Image Path (in /public)">
-                      <Input value={project.image} onChange={(v) => updateProject(project.id, "image", v)} />
-                    </Field>
+                    <div>
+                      <label htmlFor={`project-image-${project.id}`} className="mb-1.5 block text-sm font-medium text-foreground">Project banner</label>
+                      {project.image && (
+                        <div className="relative mb-3 aspect-[16/7] overflow-hidden rounded-xl border border-card-border bg-muted">
+                          <Image src={project.image} alt={`${project.title} banner preview`} fill unoptimized sizes="(min-width: 640px) 600px, 90vw" className="object-cover" />
+                        </div>
+                      )}
+                      <input id={`project-image-${project.id}`} type="file" accept="image/jpeg,image/png,image/webp"
+                        disabled={uploading !== null}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (file) void uploadImage(project.id, file);
+                        }}
+                        className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-on-primary disabled:opacity-60" />
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {uploading === project.id ? "Uploading…" : "JPEG, PNG or WebP, up to 3 MB. Save Changes to publish the banner."}
+                      </p>
+                      {uploadError && editingProject === project.id && <p role="alert" className="mt-2 text-sm text-red-500">{uploadError}</p>}
+                      {project.image && <button type="button" onClick={() => updateProject(project.id, "image", "")} className="mt-2 text-sm text-red-500">Remove banner</button>}
+                      <div className="mt-3">
+                        <Field label="Or enter an image URL or public path">
+                          <Input value={project.image} onChange={(v) => updateProject(project.id, "image", v)} />
+                        </Field>
+                      </div>
+                    </div>
                     <Field label="Tags">
                       <div className="flex flex-wrap gap-2">
                         {project.tags.map((tag, i) => (
@@ -642,7 +765,7 @@ function ProjectsEditor({
         </div>
       </SectionCard>
 
-      <SaveButton onClick={save} />
+      <SaveButton onClick={save} disabled={uploading !== null} />
     </div>
   );
 }
@@ -654,7 +777,7 @@ function ContactEditor({
   onSave,
 }: {
   data: PortfolioData;
-  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<ContactData>({ ...data.contact });
@@ -663,9 +786,9 @@ function ContactEditor({
     setLocal({ ...data.contact });
   }, [data.contact]);
 
-  const save = () => {
-    update("contact", local);
-    onSave();
+  const save = async () => {
+    if (await update("contact", local)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
   };
 
   return (
@@ -692,7 +815,7 @@ function SocialEditor({
   onSave,
 }: {
   data: PortfolioData;
-  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<SocialData>({ ...data.social });
@@ -701,9 +824,9 @@ function SocialEditor({
     setLocal({ ...data.social });
   }, [data.social]);
 
-  const save = () => {
-    update("social", local);
-    onSave();
+  const save = async () => {
+    if (await update("social", local)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
   };
 
   return (
@@ -733,7 +856,7 @@ function MetaEditor({
   onSave,
 }: {
   data: PortfolioData;
-  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => void;
+  update: <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => Promise<boolean>;
   onSave: () => void;
 }) {
   const [local, setLocal] = useState<MetaData>({ ...data.meta });
@@ -742,9 +865,9 @@ function MetaEditor({
     setLocal({ ...data.meta });
   }, [data.meta]);
 
-  const save = () => {
-    update("meta", local);
-    onSave();
+  const save = async () => {
+    if (await update("meta", local)) onSave();
+    else alert("Save failed. Check your connection and permissions.");
   };
 
   return (

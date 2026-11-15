@@ -54,6 +54,24 @@ export interface MetaData {
   description: string;
 }
 
+export interface SiteContent {
+  role: string;
+  aboutIntro: string;
+  principles: string[];
+  graduationYear: string;
+  expertiseHeading: string;
+  expertiseDescription: string;
+  expertise: { title: string; subtitle: string; description: string; stack: string[] }[];
+  overviewHeading: string;
+  overviewDescription: string;
+  featuredHeading: string;
+  featuredDescription: string;
+  ctaHeading: string;
+  ctaDescription: string;
+  footerDescription: string;
+  contactAvailability: string;
+}
+
 export interface PortfolioData {
   hero: HeroData;
   about: AboutData;
@@ -61,131 +79,5 @@ export interface PortfolioData {
   contact: ContactData;
   social: SocialData;
   meta: MetaData;
+  content: SiteContent;
 }
-
-export const defaultData: PortfolioData = {
-  hero: {
-    name: "John Doe",
-    title: "JD",
-    tagline:
-      "A passionate Full-Stack Developer crafting modern web experiences with clean code and thoughtful design.",
-    availability: true,
-  },
-  about: {
-    bio: [
-      "I'm a first-year college student pursuing a Bachelor of Science in Information Technology at the University of Cebu. I have a strong passion for web development and enjoy learning new technologies to build modern, user-friendly applications.",
-      "Outside of coding, I enjoy exploring new tools, collaborating with fellow developers, and continuously improving my skills to grow in the tech industry.",
-    ],
-    skills: [
-      "JavaScript",
-      "HTML/CSS",
-      "React",
-      "Next.js",
-      "Node.js",
-      "Python",
-      "Tailwind CSS",
-      "Git",
-    ],
-    education: {
-      school: "University of Cebu",
-      degree: "Bachelor of Science in Information Technology",
-      status: "First Year Student",
-      description:
-        "Currently learning the fundamentals of IT, programming, and web development. Eager to apply classroom knowledge to real-world projects.",
-      logo: "/uc-logo-bg-160x83.c24343b851e5b064daf9.png",
-    },
-  },
-  projects: {
-    heading: "Projects",
-    subtitle: "Here are some of the projects I've worked on",
-    categories: ["All", "School Projects", "Personal Projects"],
-    items: [
-      {
-        id: "1",
-        title: "Student Enrollment System",
-        description:
-          "A web-based enrollment system for managing student registration and records.",
-        image: "/file.svg",
-        tags: ["HTML", "CSS", "JavaScript", "PHP"],
-        github: "https://github.com",
-        live: "https://vercel.com",
-        category: "School Projects",
-        finished: true,
-      },
-      {
-        id: "2",
-        title: "Library Management App",
-        description:
-          "System for tracking books, borrowing, and returns with a simple dashboard.",
-        image: "/globe.svg",
-        tags: ["React", "Node.js", "MongoDB"],
-        github: "https://github.com",
-        live: "https://vercel.com",
-        category: "School Projects",
-        finished: true,
-      },
-      {
-        id: "3",
-        title: "Class Attendance Tracker",
-        description:
-          "Attendance monitoring tool with CSV export and summary reports.",
-        image: "/window.svg",
-        tags: ["Next.js", "TypeScript", "Tailwind"],
-        github: "https://github.com",
-        live: "https://vercel.com",
-        category: "School Projects",
-        finished: true,
-      },
-      {
-        id: "4",
-        title: "E-Commerce Platform",
-        description:
-          "A full-stack e-commerce solution with cart, checkout, and payment integration.",
-        image: "/file.svg",
-        tags: ["Next.js", "Stripe", "PostgreSQL"],
-        github: "https://github.com",
-        live: "https://vercel.com",
-        category: "Personal Projects",
-        finished: true,
-      },
-      {
-        id: "5",
-        title: "Weather Dashboard",
-        description:
-          "Beautiful weather app with 7-day forecasts, interactive maps, and alerts.",
-        image: "/window.svg",
-        tags: ["TypeScript", "OpenWeather API", "Chart.js"],
-        github: "https://github.com",
-        live: "https://vercel.com",
-        category: "Personal Projects",
-        finished: true,
-      },
-      {
-        id: "6",
-        title: "Portfolio CMS",
-        description:
-          "Headless CMS for managing portfolio content with an intuitive admin panel.",
-        image: "/next.svg",
-        tags: ["Next.js", "Sanity", "Vercel"],
-        github: "https://github.com",
-        live: "https://vercel.com",
-        category: "Personal Projects",
-        finished: true,
-      },
-    ],
-  },
-  contact: {
-    heading: "Get In Touch",
-    subtitle: "Have a project in mind or just want to chat? Feel free to reach out!",
-  },
-  social: {
-    github: "https://github.com",
-    linkedin: "https://linkedin.com",
-    email: "john@example.com",
-  },
-  meta: {
-    title: "John Doe | Full-Stack Developer",
-    description:
-      "Professional portfolio of John Doe — Full-Stack Developer specializing in modern web experiences.",
-  },
-};
