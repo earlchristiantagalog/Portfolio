@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSameOrigin, loginAdmin, SESSION_COOKIE, SESSION_SECONDS } from "@/server/auth/admin";
+import { databaseErrorCategory } from "@/server/db/diagnostics";
 
 export const runtime = "nodejs";
 
@@ -25,8 +26,11 @@ export async function POST(request: Request) {
     });
     response.headers.set("Cache-Control", "no-store");
     return response;
-  } catch {
-    console.error("Admin login unavailable");
+  } catch (error) {
+    let category = databaseErrorCategory(error);
+    if (error instanceof Error && error.message === "Admin credentials are not configured") category = "ADMIN_ENV_MISSING";
+    if (error instanceof Error && error.message === "Admin password hash is invalid") category = "ADMIN_HASH_INVALID";
+    console.error("Admin login unavailable:", category);
     return NextResponse.json({ error: "Login is temporarily unavailable." }, { status: 503 });
   }
 }

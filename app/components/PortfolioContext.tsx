@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { PortfolioData } from "@/app/data/portfolio-data";
 import { loadPortfolioData, savePortfolioData, savePortfolioSection } from "@/app/lib/portfolio-service";
 
@@ -20,38 +20,92 @@ export function usePortfolio() {
   return useContext(PortfolioContext);
 }
 
-export function PortfolioProvider({ children, initialData }: { children: React.ReactNode; initialData: PortfolioData }) {
+export function PortfolioProvider({ children, initialData, defaultData }: { children: React.ReactNode; initialData: PortfolioData; defaultData: PortfolioData }) {
   const [data, setData] = useState<PortfolioData>(initialData);
-  const [loading, setLoading] = useState(true);
+  const version = useRef(0);
+  const refreshVersion = useRef(0);
+  const channel = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
-    async function init() {
+    let active = true;
+    async function refresh() {
+      const startedAt = version.current;
+      const requestId = ++refreshVersion.current;
       const apiData = await loadPortfolioData();
-      if (apiData) {
-        setData(apiData);
+      if (!active) return;
+      if (apiData && startedAt === version.current && requestId === refreshVersion.current) {
+        setData((current) => {
+          const next = { ...current };
+          let changed = false;
+          for (const key of Object.keys(apiData) as (keyof PortfolioData)[]) {
+            if (JSON.stringify(current[key]) !== JSON.stringify(apiData[key])) {
+              Object.assign(next, { [key]: apiData[key] });
+              changed = true;
+            }
+          }
+          return changed ? next : current;
+        });
       }
-      setLoading(false);
     }
-    init();
+    if ("BroadcastChannel" in window) {
+      channel.current = new BroadcastChannel("portfolio-updates");
+      channel.current.onmessage = () => void refresh();
+    }
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "portfolio-updated") void refresh();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = window.setInterval(onVisible, 5000);
+    return () => {
+      active = false;
+      channel.current?.close();
+      channel.current = null;
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const announceUpdate = useCallback(() => {
+    channel.current?.postMessage("updated");
+    try {
+      localStorage.setItem("portfolio-updated", String(Date.now()));
+    } catch {
+      // Cross-tab storage can be disabled; polling remains available.
+    }
   }, []);
 
   const updateSection = useCallback(
     async <K extends keyof PortfolioData>(key: K, value: PortfolioData[K]) => {
+      version.current++;
       const success = await savePortfolioSection(key, value);
-      if (success) setData((previous) => ({ ...previous, [key]: value }));
+      version.current++;
+      if (success) {
+        setData((previous) => ({ ...previous, [key]: value }));
+        announceUpdate();
+      }
       return success;
     },
-    []
+    [announceUpdate]
   );
 
   const resetData = useCallback(async () => {
-    const success = await savePortfolioData(initialData);
-    if (success) setData(initialData);
+    version.current++;
+    const success = await savePortfolioData(defaultData);
+    version.current++;
+    if (success) {
+      setData(defaultData);
+      announceUpdate();
+    }
     return success;
-  }, [initialData]);
+  }, [announceUpdate, defaultData]);
 
   return (
-    <PortfolioContext.Provider value={{ data, loading, updateSection, resetData }}>
+    <PortfolioContext.Provider value={{ data, loading: false, updateSection, resetData }}>
       {children}
     </PortfolioContext.Provider>
   );

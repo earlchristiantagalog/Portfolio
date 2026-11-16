@@ -5,9 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePortfolio } from "@/app/components/PortfolioContext";
+import { MessagesPanel } from "./MessagesPanel";
 import type { PortfolioData, HeroData, AboutData, ProjectsData, ContactData, SocialData, MetaData, SiteContent } from "@/app/data/portfolio-data";
 
-type Tab = "hero" | "about" | "projects" | "contact" | "social" | "meta" | "content";
+type Tab = "hero" | "about" | "projects" | "contact" | "social" | "meta" | "content" | "messages";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "hero", label: "Hero" },
@@ -15,6 +16,7 @@ const tabs: { key: Tab; label: string }[] = [
   { key: "about", label: "About" },
   { key: "projects", label: "Projects" },
   { key: "contact", label: "Contact" },
+  { key: "messages", label: "Messages" },
   { key: "social", label: "Social" },
   { key: "meta", label: "Meta Tags" },
 ];
@@ -139,6 +141,13 @@ export default function AdminPage() {
               )}
               {activeTab === "contact" && (
                 <ContactEditor data={data} update={updateSection} onSave={handleSave} />
+              )}
+              {activeTab === "messages" && (
+                <MessagesPanel
+                  senderName={data.hero.name}
+                  acceptingMessages={data.contact.acceptingMessages}
+                  setAcceptingMessages={(value) => updateSection("contact", { ...data.contact, acceptingMessages: value })}
+                />
               )}
               {activeTab === "social" && (
                 <SocialEditor data={data} update={updateSection} onSave={handleSave} />
@@ -707,8 +716,8 @@ function ProjectsEditor({
                     <div>
                       <label htmlFor={`project-image-${project.id}`} className="mb-1.5 block text-sm font-medium text-foreground">Project banner</label>
                       {project.image && (
-                        <div className="relative mb-3 aspect-[16/7] overflow-hidden rounded-xl border border-card-border bg-muted">
-                          <Image src={project.image} alt={`${project.title} banner preview`} fill unoptimized sizes="(min-width: 640px) 600px, 90vw" className="object-cover" />
+                        <div className="relative mb-3 aspect-video overflow-hidden rounded-xl border border-card-border bg-muted">
+                          <Image src={project.image} alt={`${project.title} banner preview`} fill unoptimized sizes="(min-width: 640px) 600px, 90vw" className="object-contain" />
                         </div>
                       )}
                       <input id={`project-image-${project.id}`} type="file" accept="image/jpeg,image/png,image/webp"
@@ -720,7 +729,7 @@ function ProjectsEditor({
                         }}
                         className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-on-primary disabled:opacity-60" />
                       <p className="mt-2 text-xs text-muted-foreground">
-                        {uploading === project.id ? "Uploading…" : "JPEG, PNG or WebP, up to 3 MB. Save Changes to publish the banner."}
+                        {uploading === project.id ? "Uploading…" : "JPEG, PNG or WebP, up to 3 MB. Click Save Changes below to publish the banner."}
                       </p>
                       {uploadError && editingProject === project.id && <p role="alert" className="mt-2 text-sm text-red-500">{uploadError}</p>}
                       {project.image && <button type="button" onClick={() => updateProject(project.id, "image", "")} className="mt-2 text-sm text-red-500">Remove banner</button>}

@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Portfolio {
+  id        String   @id @db.VarChar(191)
+  data      Json
+  updatedAt DateTime
+
+  @@map("portfolio")
+}
+
+model Message {
+  id        String   @id @default(cuid()) @db.VarChar(191)
+  name      String   @db.VarChar(200)
+  email     String   @db.VarChar(320)
+  subject   String   @db.VarChar(200)
+  message   String   @db.Text
+  createdAt DateTime
+  resolved  Boolean  @default(false)
+
+  @@map("messages")
+}
+
+model AdminSession {
+  id        String   @id @default(cuid()) @db.VarChar(191)
+  tokenHash String   @unique @db.VarChar(64)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@map("admin_sessions")
+}
+
+model AdminLoginLimit {
+  id        String   @id @db.VarChar(191)
+  attempts  Int
+  expiresAt DateTime
+
+  @@map("admin_login_limits")
+}
+
+model ProjectImage {
+  id          String   @id @default(cuid()) @db.VarChar(191)
+  data        Bytes    @db.ByteA
+  contentType String
+  createdAt   DateTime
+
+  @@map("project_images")
+}

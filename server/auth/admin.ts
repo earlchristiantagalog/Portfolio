@@ -2,7 +2,7 @@ import "server-only";
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { cookies } from "next/headers";
-import { getDatabase } from "@/server/db/mongodb";
+import { getPrisma } from "@/server/db/prisma";
 
 const scrypt = promisify(scryptCallback);
 export const SESSION_COOKIE = "portfolio_admin_session";
@@ -23,10 +23,8 @@ export async function getAdminAccess() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return { allowed: false, status: 401 } as const;
   try {
-    const db = await getDatabase();
-    const session = await db.collection("admin_sessions").findOne({
-      tokenHash: digest(token),
-      expiresAt: { $gt: new Date() },
+    const session = await getPrisma().adminSession.findFirst({
+      where: { tokenHash: digest(token), expiresAt: { gt: new Date() } },
     });
     return session ? { allowed: true, status: 200 } as const : { allowed: false, status: 401 } as const;
   } catch {
@@ -43,17 +41,20 @@ export async function loginAdmin(username: string, password: string) {
     throw new Error("Admin password hash is invalid");
   }
 
-  const db = await getDatabase();
+  const db = getPrisma();
   const now = new Date();
-  const attempts = db.collection<{ _id: string; attempts: number; expiresAt: Date }>("admin_login_limits");
-  const counter = await attempts.findOneAndUpdate(
-    { _id: "admin" },
-    [{ $set: {
-      attempts: { $cond: [{ $gt: ["$expiresAt", now] }, { $add: ["$attempts", 1] }, 1] },
-      expiresAt: { $cond: [{ $gt: ["$expiresAt", now] }, "$expiresAt", new Date(now.getTime() + WINDOW_MS)] },
-    } }],
-    { upsert: true, returnDocument: "after" },
-  );
+  const expiresTime = new Date(now.getTime() + WINDOW_MS);
+  const counters = await db.$queryRaw<{ attempts: number }[]>`
+    INSERT INTO "admin_login_limits" ("id", "attempts", "expiresAt")
+    VALUES ('admin', 1, ${expiresTime})
+    ON CONFLICT ("id") DO UPDATE SET
+      "attempts" = CASE WHEN "admin_login_limits"."expiresAt" <= ${now}
+        THEN 1 ELSE "admin_login_limits"."attempts" + 1 END,
+      "expiresAt" = CASE WHEN "admin_login_limits"."expiresAt" <= ${now}
+        THEN EXCLUDED."expiresAt" ELSE "admin_login_limits"."expiresAt" END
+    RETURNING "attempts"
+  `;
+  const counter = counters[0];
   if (!counter || counter.attempts > MAX_ATTEMPTS) return { ok: false, limited: true } as const;
 
   const actual = await scrypt(password, salt, 64) as Buffer;
@@ -63,17 +64,15 @@ export async function loginAdmin(username: string, password: string) {
 
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_SECONDS * 1000);
-  const sessions = db.collection("admin_sessions");
-  await sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-  await sessions.insertOne({ tokenHash: digest(token), expiresAt });
-  await attempts.deleteOne({ _id: "admin" });
+  await db.adminSession.deleteMany({ where: { expiresAt: { lte: now } } });
+  await db.adminSession.create({ data: { tokenHash: digest(token), expiresAt } });
+  await db.adminLoginLimit.deleteMany({ where: { id: "admin" } });
   return { ok: true, token, expiresAt } as const;
 }
 
 export async function revokeAdminSession() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (token && /^[a-f0-9]{64}$/.test(token)) {
-    const db = await getDatabase();
-    await db.collection("admin_sessions").deleteOne({ tokenHash: digest(token) });
+    await getPrisma().adminSession.deleteMany({ where: { tokenHash: digest(token) } });
   }
 }

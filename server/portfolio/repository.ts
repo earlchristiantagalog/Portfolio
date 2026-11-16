@@ -1,46 +1,50 @@
 import "server-only";
 import type { PortfolioData } from "@/app/data/portfolio-data";
-import { getDatabase } from "@/server/db/mongodb";
+import { Prisma } from "@/generated/prisma";
+import { getPrisma } from "@/server/db/prisma";
 import { defaultData } from "@/server/portfolio/defaults";
 
 export async function getPortfolio(): Promise<PortfolioData | null> {
-  const db = await getDatabase();
-  const document = await db.collection<{ _id: string; data: PortfolioData }>("portfolio")
-    .findOne({ _id: "main" }, { projection: { _id: 0, data: 1 } });
+  const document = await getPrisma().portfolio.findUnique({ where: { id: "main" } });
   if (!document?.data) return null;
+  const data = document.data as unknown as PortfolioData;
   return {
-    ...document.data,
-    content: { ...defaultData.content, ...document.data.content },
+    ...data,
+    content: { ...defaultData.content, ...data.content },
+    contact: { ...defaultData.contact, ...data.contact },
   };
 }
 
 export async function savePortfolio(data: PortfolioData) {
-  const db = await getDatabase();
-  await db.collection<{ _id: string; data: PortfolioData; updatedAt: Date }>("portfolio").updateOne(
-    { _id: "main" },
-    { $set: { data, updatedAt: new Date() } },
-    { upsert: true },
-  );
+  const value = data as unknown as Prisma.InputJsonValue;
+  await getPrisma().portfolio.upsert({
+    where: { id: "main" },
+    create: { id: "main", data: value, updatedAt: new Date() },
+    update: { data: value, updatedAt: new Date() },
+  });
 }
 
 export async function savePortfolioSection<K extends keyof PortfolioData>(
   key: K,
   value: PortfolioData[K],
 ) {
-  const db = await getDatabase();
-  const collection = db.collection<{ _id: string; data: PortfolioData; updatedAt: Date }>("portfolio");
-  await collection.updateOne(
-    { _id: "main" },
-    { $setOnInsert: { data: defaultData, updatedAt: new Date() } },
-    { upsert: true },
-  );
-  await collection.updateOne(
-    { _id: "main" },
-    { $set: { [`data.${key}`]: value, updatedAt: new Date() } },
-  );
+  const prisma = getPrisma();
+  // Initialize once, then update only the selected JSON section atomically.
+  await prisma.portfolio.upsert({
+    where: { id: "main" },
+    create: { id: "main", data: defaultData as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
+    update: {},
+  });
+  const json = JSON.stringify(value);
+  const updated = await prisma.$executeRaw`
+    UPDATE "portfolio"
+    SET "data" = jsonb_set("data", ARRAY[${key}]::text[], ${json}::jsonb, true),
+        "updatedAt" = ${new Date()}
+    WHERE "id" = 'main'
+  `;
+  if (updated !== 1) throw new Error("Unable to update portfolio");
 }
 
 export async function saveMessage(message: { name: string; email: string; subject: string; message: string }) {
-  const db = await getDatabase();
-  await db.collection("messages").insertOne({ ...message, createdAt: new Date() });
+  await getPrisma().message.create({ data: { ...message, createdAt: new Date() } });
 }
