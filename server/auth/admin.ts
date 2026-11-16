@@ -44,14 +44,17 @@ export async function loginAdmin(username: string, password: string) {
   const db = getPrisma();
   const now = new Date();
   const expiresTime = new Date(now.getTime() + WINDOW_MS);
-  await db.$executeRaw`
-    INSERT INTO admin_login_limits (id, attempts, expiresAt)
+  const counters = await db.$queryRaw<{ attempts: number }[]>`
+    INSERT INTO "admin_login_limits" ("id", "attempts", "expiresAt")
     VALUES ('admin', 1, ${expiresTime})
-    ON DUPLICATE KEY UPDATE
-      attempts = IF(expiresAt <= ${now}, 1, attempts + 1),
-      expiresAt = IF(expiresAt <= ${now}, ${expiresTime}, expiresAt)
+    ON CONFLICT ("id") DO UPDATE SET
+      "attempts" = CASE WHEN "admin_login_limits"."expiresAt" <= ${now}
+        THEN 1 ELSE "admin_login_limits"."attempts" + 1 END,
+      "expiresAt" = CASE WHEN "admin_login_limits"."expiresAt" <= ${now}
+        THEN EXCLUDED."expiresAt" ELSE "admin_login_limits"."expiresAt" END
+    RETURNING "attempts"
   `;
-  const counter = await db.adminLoginLimit.findUnique({ where: { id: "admin" } });
+  const counter = counters[0];
   if (!counter || counter.attempts > MAX_ATTEMPTS) return { ok: false, limited: true } as const;
 
   const actual = await scrypt(password, salt, 64) as Buffer;

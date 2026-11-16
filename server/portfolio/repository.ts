@@ -11,6 +11,7 @@ export async function getPortfolio(): Promise<PortfolioData | null> {
   return {
     ...data,
     content: { ...defaultData.content, ...data.content },
+    contact: { ...defaultData.contact, ...data.contact },
   };
 }
 
@@ -34,12 +35,12 @@ export async function savePortfolioSection<K extends keyof PortfolioData>(
     create: { id: "main", data: defaultData as unknown as Prisma.InputJsonValue, updatedAt: new Date() },
     update: {},
   });
-  const path = `$.${key}`;
   const json = JSON.stringify(value);
   const updated = await prisma.$executeRaw`
-    UPDATE portfolio
-    SET data = JSON_SET(data, ${path}, JSON_EXTRACT(${json}, '$')), updatedAt = ${new Date()}
-    WHERE id = 'main'
+    UPDATE "portfolio"
+    SET "data" = jsonb_set("data", ARRAY[${key}]::text[], ${json}::jsonb, true),
+        "updatedAt" = ${new Date()}
+    WHERE "id" = 'main'
   `;
   if (updated !== 1) throw new Error("Unable to update portfolio");
 }

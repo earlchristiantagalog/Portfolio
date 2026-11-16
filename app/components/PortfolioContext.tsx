@@ -20,9 +20,8 @@ export function usePortfolio() {
   return useContext(PortfolioContext);
 }
 
-export function PortfolioProvider({ children, initialData }: { children: React.ReactNode; initialData: PortfolioData }) {
+export function PortfolioProvider({ children, initialData, defaultData }: { children: React.ReactNode; initialData: PortfolioData; defaultData: PortfolioData }) {
   const [data, setData] = useState<PortfolioData>(initialData);
-  const [loading, setLoading] = useState(true);
   const version = useRef(0);
   const refreshVersion = useRef(0);
   const channel = useRef<BroadcastChannel | null>(null);
@@ -47,9 +46,7 @@ export function PortfolioProvider({ children, initialData }: { children: React.R
           return changed ? next : current;
         });
       }
-      setLoading(false);
     }
-    void refresh();
     if ("BroadcastChannel" in window) {
       channel.current = new BroadcastChannel("portfolio-updates");
       channel.current.onmessage = () => void refresh();
@@ -98,17 +95,17 @@ export function PortfolioProvider({ children, initialData }: { children: React.R
 
   const resetData = useCallback(async () => {
     version.current++;
-    const success = await savePortfolioData(initialData);
+    const success = await savePortfolioData(defaultData);
     version.current++;
     if (success) {
-      setData(initialData);
+      setData(defaultData);
       announceUpdate();
     }
     return success;
-  }, [announceUpdate, initialData]);
+  }, [announceUpdate, defaultData]);
 
   return (
-    <PortfolioContext.Provider value={{ data, loading, updateSection, resetData }}>
+    <PortfolioContext.Provider value={{ data, loading: false, updateSection, resetData }}>
       {children}
     </PortfolioContext.Provider>
   );

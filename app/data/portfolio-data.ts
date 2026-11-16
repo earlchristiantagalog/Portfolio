@@ -41,6 +41,7 @@ export interface ProjectsData {
 export interface ContactData {
   heading: string;
   subtitle: string;
+  acceptingMessages: boolean;
 }
 
 export interface SocialData {

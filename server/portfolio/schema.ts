@@ -37,7 +37,7 @@ export const portfolioSchema = z.object({
       finished: z.boolean(),
     }).strict()).max(200),
   }).strict(),
-  contact: z.object({ heading: shortText, subtitle: text }).strict(),
+  contact: z.object({ heading: shortText, subtitle: text, acceptingMessages: z.boolean().default(true) }).strict(),
   social: z.object({ github: shortText, linkedin: shortText, email: shortText }).strict(),
   meta: z.object({ title: shortText, description: text }).strict(),
 }).strict();

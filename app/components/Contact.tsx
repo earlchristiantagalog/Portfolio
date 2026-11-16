@@ -5,7 +5,7 @@ import { usePortfolio } from "./PortfolioContext";
 import { submitContactForm } from "@/app/lib/portfolio-service";
 import { CopyButton } from "./ui/CopyButton";
 
-type Status = "idle" | "sending" | "success" | "error";
+type Status = "idle" | "sending" | "success" | "error" | "closed";
 
 export default function Contact() {
   const { data } = usePortfolio();
@@ -34,18 +34,18 @@ export default function Contact() {
 
     setStatus("sending");
 
-    const success = await submitContactForm({
+    const result = await submitContactForm({
       name: formState.name,
       email: formState.email,
       message: formState.message,
     });
 
-    if (success) {
+    if (result === "sent") {
       setStatus("success");
       setFormState({ name: "", email: "", message: "" });
       window.setTimeout(() => setStatus("idle"), 5000);
     } else {
-      setStatus("error");
+      setStatus(result);
     }
   };
 
@@ -83,7 +83,7 @@ export default function Contact() {
             <div>
               <p className="label-sm text-muted-foreground">Channel status</p>
               <p className="mt-1 text-sm font-medium text-foreground">
-                {data.hero.availability ? "Open for inquiries" : "Currently unavailable"}
+                {contact.acceptingMessages ? "Messages are open" : "Messages are closed"}
               </p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function Contact() {
               </span>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6" noValidate>
+            {contact.acceptingMessages ? <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6" noValidate>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="name" className="label-sm mb-2 block">
@@ -239,7 +239,20 @@ export default function Contact() {
                   </div>
                 </div>
               )}
-            </form>
+              {status === "closed" && (
+                <p role="alert" className="text-sm text-muted-foreground">
+                  Messages have just closed. Please check back later.
+                </p>
+              )}
+            </form> : (
+              <div role="status" className="px-6 py-16 text-center">
+                <p className="label text-primary">Messages closed</p>
+                <h2 className="mt-4 text-2xl font-semibold text-foreground">The message form is taking a break.</h2>
+                <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  Thanks for stopping by. Please check back later to send a message.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Channels */}

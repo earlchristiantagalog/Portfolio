@@ -137,6 +137,7 @@ export const defaultData: PortfolioData = {
   contact: {
     heading: "Get In Touch",
     subtitle: "Have a project in mind or just want to chat? Feel free to reach out!",
+    acceptingMessages: true,
   },
   social: {
     github: "https://github.com",

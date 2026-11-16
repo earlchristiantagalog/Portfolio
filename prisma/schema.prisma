@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -23,6 +23,7 @@ model Message {
   subject   String   @db.VarChar(200)
   message   String   @db.Text
   createdAt DateTime
+  resolved  Boolean  @default(false)
 
   @@map("messages")
 }
@@ -46,7 +47,7 @@ model AdminLoginLimit {
 
 model ProjectImage {
   id          String   @id @default(cuid()) @db.VarChar(191)
-  data        Bytes    @db.LongBlob
+  data        Bytes    @db.ByteA
   contentType String
   createdAt   DateTime
 

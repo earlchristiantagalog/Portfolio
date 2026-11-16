@@ -50,15 +50,15 @@ export async function submitContactForm(data: {
   email: string;
   subject?: string;
   message: string;
-}): Promise<boolean> {
+}): Promise<"sent" | "closed" | "error"> {
   try {
     const res = await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return res.ok;
+    return res.ok ? "sent" : res.status === 403 ? "closed" : "error";
   } catch {
-    return false;
+    return "error";
   }
 }
